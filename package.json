@@ -10,19 +10,24 @@
   },
   "dependencies": {
     "@types/multer": "^2.0.0",
-    "@types/pdf-parse": "^1.1.5",
+    "canvas": "^3.2.0",
     "lucide-react": "^0.542.0",
     "multer": "^2.0.2",
     "next": "15.5.2",
-    "openai": "^5.18.1",
+    "openai": "^5.19.1",
+    "pdf-extraction": "^1.0.2",
     "pdf-parse": "^1.1.1",
+    "pdf2pic": "^3.2.0",
+    "pdfjs-dist": "^5.1.91",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
