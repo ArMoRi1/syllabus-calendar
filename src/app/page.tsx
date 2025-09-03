@@ -13,7 +13,34 @@ export default function HomePage() {
     useEffect(() => {
         setIsClient(true)
     }, [])
+    const processManualText = async () => {
+        setIsProcessing(true)
 
+        try {
+            const formData = new FormData()
+            formData.append('manualText', manualText)
+
+            const response = await fetch('/api/process-syllabus', {
+                method: 'POST',
+                body: formData,
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                setEvents(result.events.map((event, index) => ({
+                    ...event,
+                    id: index + 1
+                })))
+            } else {
+                alert('Error: ' + result.error)
+            }
+        } catch (error) {
+            alert('Error processing text')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
     // Export to Google Calendar
     const exportToGoogleCalendar = () => {
         const calendarUrl = events.map(event => {
@@ -131,7 +158,23 @@ export default function HomePage() {
                             >
                                 Choose PDF file
                             </label>
-
+                            <div className="mt-6 border-t pt-6">
+                                <h3 className="text-lg font-semibold mb-3">Or paste syllabus text:</h3>
+                                <textarea
+                                    className="w-full h-40 p-3 border rounded-lg resize-none"
+                                    placeholder="Copy and paste your syllabus text here..."
+                                    value={manualText}
+                                    onChange={(e) => setManualText(e.target.value)}
+                                />
+                                {manualText.length > 10 && (
+                                    <button
+                                        onClick={() => processManualText()}
+                                        className="mt-3 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                                    >
+                                        Process Text
+                                    </button>
+                                )}
+                            </div>
                             {file && (
                                 <div className="mt-4">
                                     <p className="text-green-600 mb-4">
@@ -145,16 +188,6 @@ export default function HomePage() {
                                     >
                                         {isProcessing ? '🔄 Processing...' : '🚀 Create Calendar'}
                                     </button>
-
-                                    <div className="mt-4 border-t pt-4">
-                                        <h3 className="font-semibold mb-2">Or paste syllabus text directly:</h3>
-                                        <textarea
-                                            className="w-full h-32 p-3 border rounded-lg"
-                                            placeholder="Paste your syllabus text here..."
-                                            value={manualText}
-                                            onChange={(e) => setManualText(e.target.value)}
-                                        />
-                                    </div>
                                 </div>
                             )}
                         </div>
@@ -226,14 +259,17 @@ export default function HomePage() {
                                                     className="text-blue-600 text-sm mb-2"
                                                     suppressHydrationWarning
                                                 >
+                                                    {/*{console.log("RAW EVENT DATE:", event.date)}*/}
+
                                                     {isClient &&
-                                                    new Date(event.date).toLocaleDateString('en-US', {
+                                                    new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
                                                         weekday: 'long',
                                                         year: 'numeric',
                                                         month: 'long',
                                                         day: 'numeric',
-                                                    })}
-                                                </p>
+                                                    })
+                                                    }
+                                                    </p>
 
                                                 {event.description && (
                                                     <p className="text-gray-600 text-sm">
