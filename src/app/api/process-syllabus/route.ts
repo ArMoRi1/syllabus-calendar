@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Truncate text if too long for OpenAI
-        const maxTextLength = 10000
+        const maxTextLength = 300000
         if (textToAnalyze.length > maxTextLength) {
             console.log(`⚠️ Text too long (${textToAnalyze.length} chars), truncating to ${maxTextLength}`)
             textToAnalyze = textToAnalyze.substring(0, maxTextLength)

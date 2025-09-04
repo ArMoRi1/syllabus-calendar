@@ -1,24 +1,46 @@
 // src/app/lib/pdfExtractor.ts
 
-// Simple and reliable PDF extraction with pdf-parse only
+// Fixed pdf-parse method - the ENOENT error suggests it's trying to read a test file
 async function extractTextWithPdfParse(buffer: Buffer) {
     try {
         console.log('🔄 Using pdf-parse for text extraction...')
 
-        // Import pdf-parse properly
+        // IMPORTANT: Clear any env variables that might interfere
+        const originalEnv = { ...process.env }
+
+        // Remove any test-related environment variables
+        delete process.env.PDF_JS_TEST_FILE
+        delete process.env.PDF_PARSE_TEST_FILE
+
         const pdfParse = await import('pdf-parse')
 
-        // Call pdf-parse with the buffer directly
+        // Call pdf-parse with clean options
         const data = await pdfParse.default(buffer, {
-            // Options for better extraction
+            // Options for better text extraction
             normalizeWhitespace: true,
             disableCombineTextItems: false,
+            // Make sure we don't use any test data
+            version: 'default'
         })
+
+        // Restore environment
+        process.env = originalEnv
 
         console.log(`✅ pdf-parse successful!`)
         console.log(`📄 Pages: ${data.numpages}`)
-        console.log(`📏 Characters: ${data.text.length}`)
-        console.log(`📊 Info:`, data.info)
+        console.log(`📏 Text length: ${data.text.length}`)
+        console.log(`📝 Text preview: "${data.text.substring(0, 300)}"`)
+
+        // Validate that we got actual readable text, not PDF structure
+        const hasReadableContent = data.text &&
+            data.text.length > 100 &&
+            !data.text.includes('endobj') &&
+            !data.text.includes('FlateDecode') &&
+            /[a-zA-Z]{3,}/.test(data.text)
+
+        if (!hasReadableContent) {
+            throw new Error('pdf-parse returned PDF structure instead of readable text')
+        }
 
         return data.text
 
@@ -28,115 +50,144 @@ async function extractTextWithPdfParse(buffer: Buffer) {
     }
 }
 
-// Alternative simple extraction method without DOM dependencies
-async function extractTextSimple(buffer: Buffer) {
+// Alternative method using simple buffer reading with better text detection
+async function extractTextWithBufferSearch(buffer: Buffer) {
     try {
-        console.log('🔄 Trying simple text extraction...')
+        console.log('🔄 Searching for readable text in buffer...')
 
-        // Convert buffer to string and try to find text content
-        const bufferString = buffer.toString('binary')
+        // Convert buffer to different encodings and look for text
+        const encodings = ['utf8', 'latin1', 'ascii']
+        let bestText = ''
 
-        // Look for text patterns in PDF structure
-        const textMatches = []
+        for (const encoding of encodings) {
+            try {
+                const text = buffer.toString(encoding as BufferEncoding)
 
-        // Simple regex patterns to find text in PDF
-        const patterns = [
-            /\(([^)]+)\)\s*Tj/g,  // PDF text showing operators
-            /\[([^\]]+)\]\s*TJ/g, // PDF text array operators
-            /BT\s+([^E]+)\s+ET/g, // Text objects
-        ]
+                // Look for readable text patterns (not PDF structure)
+                const textBlocks = []
 
-        for (const pattern of patterns) {
-            let match
-            while ((match = pattern.exec(bufferString)) !== null) {
-                if (match[1]) {
-                    textMatches.push(match[1])
+                // Split by common PDF delimiters and filter readable content
+                const parts = text.split(/(?:stream|endstream|endobj|obj|\d+\s+\d+\s+R)/g)
+
+                for (const part of parts) {
+                    // Look for chunks with readable words and dates
+                    const cleanPart = part
+                        .replace(/[^\x20-\x7E\n]/g, ' ')  // Keep only printable ASCII
+                        .replace(/\s+/g, ' ')             // Normalize spaces
+                        .trim()
+
+                    // Check if this part contains readable content
+                    if (cleanPart.length > 50 &&
+                        /[a-zA-Z]{3,}/.test(cleanPart) &&     // Has real words
+                        !/^[\d\s()<>/\[\]{}]+$/.test(cleanPart) && // Not just numbers and symbols
+                        !cleanPart.includes('FlateDecode') &&     // Not PDF structure
+                        !cleanPart.includes('endobj')) {          // Not PDF structure
+
+                        textBlocks.push(cleanPart)
+                    }
                 }
+
+                const extractedText = textBlocks.join('\n').trim()
+
+                if (extractedText.length > bestText.length) {
+                    bestText = extractedText
+                }
+
+            } catch (encError) {
+                console.log(`Encoding ${encoding} failed, trying next...`)
+                continue
             }
         }
 
-        if (textMatches.length > 0) {
-            const extractedText = textMatches
-                .join(' ')
-                .replace(/\\[nrt]/g, ' ') // Remove escape sequences
-                .replace(/[^\x20-\x7E\n]/g, ' ') // Keep only printable ASCII + newlines
-                .replace(/\s+/g, ' ')
-                .trim()
-
-            console.log(`✅ Simple extraction found ${extractedText.length} characters`)
-            return extractedText
+        if (bestText.length > 100) {
+            console.log(`✅ Buffer search found ${bestText.length} characters`)
+            console.log(`📝 Preview: "${bestText.substring(0, 200)}..."`)
+            return bestText
         }
 
-        throw new Error('No readable text patterns found')
+        throw new Error('No readable text found in buffer')
 
     } catch (error) {
-        console.error('❌ Simple extraction failed:', error)
+        console.error('❌ Buffer search failed:', error)
         throw error
     }
 }
 
-// Fallback method using string search
-async function extractTextFallback(buffer: Buffer) {
+// Try to reinstall pdf-parse cleanly
+async function reinstallPdfParse() {
     try {
-        console.log('🔄 Using fallback string extraction...')
+        console.log('🔄 Attempting to use fresh pdf-parse instance...')
 
-        // Convert to UTF-8 and look for readable text
-        const text = buffer.toString('utf8')
+        // Clear require cache for pdf-parse
+        const moduleId = require.resolve('pdf-parse')
+        delete require.cache[moduleId]
 
-        // Find sequences of readable characters
-        const readableText = text
-            .match(/[a-zA-Z0-9\s.,;:!?()-]{10,}/g) // Find readable sequences of at least 10 chars
-            ?.join(' ')
-            ?.replace(/\s+/g, ' ')
-            ?.trim() || ''
+        // Import fresh instance
+        const pdfParse = require('pdf-parse')
 
-        if (readableText.length > 50) {
-            console.log(`✅ Fallback extraction found ${readableText.length} characters`)
-            return readableText
-        }
-
-        throw new Error('No readable text found in fallback method')
+        console.log('✅ Fresh pdf-parse loaded')
+        return pdfParse
 
     } catch (error) {
-        console.error('❌ Fallback extraction failed:', error)
+        console.error('❌ Fresh pdf-parse failed:', error)
         throw error
     }
 }
 
-// Main export function - focused on working methods only
+// Alternative direct pdf-parse call
+async function extractWithDirectPdfParse(buffer: Buffer) {
+    try {
+        console.log('🔄 Trying direct pdf-parse call...')
+
+        const pdfParse = await reinstallPdfParse()
+
+        const result = await pdfParse(buffer)
+
+        console.log(`✅ Direct pdf-parse successful: ${result.text.length} chars`)
+        console.log(`📝 Preview: "${result.text.substring(0, 300)}"`)
+
+        return result.text
+
+    } catch (error) {
+        console.error('❌ Direct pdf-parse failed:', error)
+        throw error
+    }
+}
+
+// Main export function
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     console.log('📱 Starting PDF text extraction...')
     console.log(`📊 Buffer size: ${buffer.length} bytes (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`)
 
     // Validate buffer
     if (!buffer || buffer.length === 0) {
-        throw new Error('❌ Empty or invalid PDF buffer')
+        throw new Error('❌ Empty PDF buffer')
     }
 
     // Check PDF signature
     const header = buffer.toString('ascii', 0, 8)
-    console.log(`🔍 File header: "${header}"`)
+    console.log(`🔍 PDF header: "${header}"`)
 
     if (!header.startsWith('%PDF')) {
-        throw new Error(`❌ Invalid PDF file - header is "${header}", expected "%PDF"`)
+        throw new Error(`❌ Invalid PDF file - header: "${header}"`)
     }
 
-    // Try extraction methods in order of reliability
+    // Try multiple approaches to pdf-parse and fallbacks
     const methods = [
         {
-            name: 'pdf-parse',
-            description: 'Primary method using pdf-parse library',
+            name: 'direct-pdf-parse',
+            description: 'Direct pdf-parse with fresh instance',
+            method: () => extractWithDirectPdfParse(buffer)
+        },
+        {
+            name: 'clean-pdf-parse',
+            description: 'Clean pdf-parse call with environment cleanup',
             method: () => extractTextWithPdfParse(buffer)
         },
         {
-            name: 'simple-extraction',
-            description: 'Simple pattern matching in PDF structure',
-            method: () => extractTextSimple(buffer)
-        },
-        {
-            name: 'fallback',
-            description: 'Basic string extraction as last resort',
-            method: () => extractTextFallback(buffer)
+            name: 'buffer-search',
+            description: 'Smart buffer text search',
+            method: () => extractTextWithBufferSearch(buffer)
         }
     ]
 
@@ -148,7 +199,7 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 
             let result = await method()
 
-            // Clean up the text
+            // Clean and validate the result
             result = result
                 .replace(/\r\n/g, '\n')
                 .replace(/\r/g, '\n')
@@ -157,22 +208,24 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
                 .trim()
 
             console.log(`📏 Cleaned text length: ${result.length}`)
-            console.log(`📝 First 200 chars: "${result.substring(0, 200)}..."`)
 
-            // Validate result quality
-            if (result && result.length >= 50) {
-                // Check if text contains some meaningful content
-                const hasWords = /\b\w{3,}\b/.test(result) // Has words with 3+ letters
-                const hasNumbers = /\d/.test(result) // Has numbers (likely dates)
+            // IMPORTANT: Validate that we got real text, not PDF structure
+            const isRealText = result &&
+                result.length >= 100 &&
+                !result.includes('endobj') &&
+                !result.includes('FlateDecode') &&
+                !result.includes('endstream') &&
+                /[a-zA-Z]{3,}.*[a-zA-Z]{3,}/.test(result) && // Has multiple real words
+                (/\d{4}/.test(result) || /\d{1,2}\/\d{1,2}/.test(result)) // Has dates
 
-                if (hasWords && (hasNumbers || result.length > 200)) {
-                    console.log(`🎉 ${name} SUCCESS! Extracted meaningful text`)
-                    return result
-                }
+            if (isRealText) {
+                console.log(`🎉 ${name} SUCCESS! Found real readable text`)
+                console.log(`📄 Sample: "${result.substring(0, 200)}..."`)
+                return result
+            } else {
+                console.log(`⚠️ ${name} returned PDF structure, not readable text`)
+                errors.push(`${name}: Returned PDF structure instead of text`)
             }
-
-            console.log(`⚠️ ${name} extracted text but quality seems poor`)
-            errors.push(`${name}: Poor quality text (${result.length} chars)`)
 
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
@@ -182,7 +235,7 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     }
 
     // All methods failed
-    const errorMessage = `All PDF extraction methods failed:\n${errors.join('\n')}`
+    const errorMessage = `Could not extract readable text from PDF. All methods failed:\n${errors.join('\n')}`
     console.error('💥 EXTRACTION FAILED:', errorMessage)
 
     throw new Error(errorMessage)
