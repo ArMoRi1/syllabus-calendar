@@ -1,4 +1,4 @@
-// src/lib/openaiAnalyzer.ts
+// src/app/lib/openaiAnalyzer.ts
 
 import { OpenAI } from 'openai'
 
@@ -63,7 +63,9 @@ function extractDatesWithRegex(text: string): any[] {
 // Main export function to analyze text with OpenAI
 export async function analyzeTextWithOpenAI(text: string) {
     if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is not configured')
+        console.error('OPENAI_API_KEY is not configured')
+        // Fallback to regex if no API key
+        return extractDatesWithRegex(text)
     }
 
     const openai = new OpenAI({
@@ -71,20 +73,21 @@ export async function analyzeTextWithOpenAI(text: string) {
     })
 
     const systemPrompt = `You are a helpful assistant that extracts dates and events from academic syllabi. 
-You MUST respond with ONLY a valid JSON array, no additional text or explanation.
+You MUST respond with ONLY a valid JSON object containing an "events" array.
 If the year is not specified, assume it's the current academic year (2024-2025).
 If only a day and month are given, use 2024 for September-December dates, and 2025 for January-May dates.
-Each event object must have: title (string), date (YYYY-MM-DD format), type (exam/assignment/reading/class/other), and optionally description (string).`
+Each event object must have: title (string), date (YYYY-MM-DD format), type (exam/assignment/reading/class/other), and optionally description (string).
 
-    const userPrompt = `Extract all important dates and events from this syllabus text and return ONLY a JSON array:
+Your response must be in this exact format:
+{
+  "events": [
+    {"title": "Event Name", "date": "YYYY-MM-DD", "type": "exam", "description": "Optional description"}
+  ]
+}`
 
-${text.substring(0, 8000)}
+    const userPrompt = `Extract all important dates and events from this syllabus text:
 
-Example response format:
-[
-  {"title": "First Day of Class", "date": "2024-09-05", "type": "class", "description": "Introduction to course"},
-  {"title": "Midterm Exam", "date": "2024-10-15", "type": "exam", "description": "Covers chapters 1-5"}
-]`
+${text.substring(0, 8000)}`
 
     try {
         console.log('Calling OpenAI API...')
@@ -103,7 +106,7 @@ Example response format:
             ],
             temperature: 0.1,
             max_tokens: 2000,
-            response_format: { type: "json_object" }
+            response_format: { type: "json_object" } // This will work now because we expect an object
         })
 
         const content = response.choices[0]?.message?.content
@@ -113,61 +116,26 @@ Example response format:
             throw new Error('Empty response from OpenAI')
         }
 
-        let cleanedContent = content.trim()
         let parsedData;
-
-        // Try direct parse
         try {
-            parsedData = JSON.parse(cleanedContent)
-        } catch (e) {
-            console.log('Direct parse failed, trying to extract JSON...')
-
-            // Try to extract array
-            const arrayMatch = cleanedContent.match(/\[[\s\S]*\]/);
-            if (arrayMatch) {
-                try {
-                    parsedData = JSON.parse(arrayMatch[0])
-                } catch (e2) {
-                    console.log('Array extraction failed')
-                }
-            }
-
-            // Try to extract object
-            if (!parsedData) {
-                const objectMatch = cleanedContent.match(/\{[\s\S]*\}/);
-                if (objectMatch) {
-                    try {
-                        const obj = JSON.parse(objectMatch[0])
-                        if (obj.events && Array.isArray(obj.events)) {
-                            parsedData = obj.events
-                        } else if (obj.data && Array.isArray(obj.data)) {
-                            parsedData = obj.data
-                        } else {
-                            parsedData = [obj]
-                        }
-                    } catch (e3) {
-                        console.log('Object extraction failed')
-                    }
-                }
-            }
+            parsedData = JSON.parse(content.trim())
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError)
+            throw new Error('Invalid JSON response from OpenAI')
         }
 
-        // Handle object with events property
-        if (parsedData && !Array.isArray(parsedData)) {
-            if (parsedData.events) {
-                parsedData = parsedData.events
-            } else if (parsedData.data) {
-                parsedData = parsedData.data
-            }
+        // Extract events array from the response
+        let events = []
+        if (parsedData.events && Array.isArray(parsedData.events)) {
+            events = parsedData.events
+        } else if (Array.isArray(parsedData)) {
+            events = parsedData
+        } else {
+            throw new Error('No events array found in response')
         }
 
-        if (!Array.isArray(parsedData)) {
-            console.error('Parsed data is not an array:', typeof parsedData)
-            throw new Error('Invalid response format from OpenAI - not an array')
-        }
-
-        console.log(`Successfully parsed ${parsedData.length} events`)
-        return parsedData
+        console.log(`Successfully parsed ${events.length} events`)
+        return events
 
     } catch (error) {
         console.error('OpenAI analysis failed:', error)
@@ -180,6 +148,8 @@ Example response format:
             return fallbackEvents
         }
 
-        throw error
+        // If both fail, return empty array instead of throwing
+        console.log('Both OpenAI and fallback failed, returning empty array')
+        return []
     }
 }
