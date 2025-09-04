@@ -1,6 +1,6 @@
 import React from 'react'
 import { Calendar, List } from 'lucide-react'
-import { ViewMode } from '@/types'
+import { ViewMode } from '../../types'
 
 interface ViewToggleProps {
     viewMode: ViewMode
