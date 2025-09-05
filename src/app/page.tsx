@@ -426,7 +426,7 @@ export default function HomePage() {
                                         className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                                     >
                                         <Calendar className="h-5 w-5" />
-                                        Export Selected ({selectedEvents.length})
+                                        Add Selected to Google ({selectedEvents.length})
                                     </button>
                                     <button
                                         onClick={resetForm}
