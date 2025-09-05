@@ -24,7 +24,7 @@ interface ProcessingResult {
     }
 }
 
-// Функція для стилізації подій (м'які кольори як у LawBandit)
+// Функція для стилізації подій
 const getEventStyle = (type: string) => {
     switch (type.toLowerCase()) {
         case 'exam':
@@ -65,39 +65,23 @@ const getEventStyle = (type: string) => {
     }
 }
 
-// Покращена функція експорту в Google Calendar
-const exportSelectedToGoogle = (events: SyllabusEvent[], selectedIds: number[]): void => {
-    const selectedEvents = events.filter(event => selectedIds.includes(event.id))
+export default function HomePage() {
+    const [file, setFile] = useState<File | null>(null)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [events, setEvents] = useState<SyllabusEvent[]>([])
+    const [viewMode, setViewMode] = useState<ViewMode>('list')
+    const [isClient, setIsClient] = useState(false)
+    const [manualText, setManualText] = useState('')
+    const [selectedEvents, setSelectedEvents] = useState<number[]>([])
+    const [selectAll, setSelectAll] = useState(false)
+    const [isSelectionMode, setIsSelectionMode] = useState(false)
 
-    if (selectedEvents.length === 0) {
-        alert('Please select at least one event to export')
-        return
-    }
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
 
-    // Створюємо ICS файл для масового імпорту
-    const createICSFile = (events: SyllabusEvent[]) => {
-        let icsContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Syllabus Parser//EN\r\n'
-
-        events.forEach(event => {
-            const date = new Date(event.date)
-            const dateStr = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-
-            icsContent += 'BEGIN:VEVENT\r\n'
-            icsContent += `UID:${event.id}-${Date.now()}@syllabusparser.com\r\n`
-            icsContent += `DTSTART:${dateStr}\r\n`
-            icsContent += `DTEND:${dateStr}\r\n`
-            icsContent += `SUMMARY:${event.title}\r\n`
-            icsContent += `DESCRIPTION:${event.description || ''}\r\n`
-            icsContent += 'END:VEVENT\r\n'
-        })
-
-        icsContent += 'END:VCALENDAR\r\n'
-        return icsContent
-    }
-
-    if (selectedEvents.length === 1) {
-        // Для одної події відкриваємо Google Calendar
-        const event = selectedEvents[0]
+    // Функція для експорту однієї події в Google Calendar
+    const exportSingleEvent = (event: SyllabusEvent) => {
         const date = new Date(event.date)
         const dateStr = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
 
@@ -108,37 +92,74 @@ const exportSelectedToGoogle = (events: SyllabusEvent[], selectedIds: number[]):
             `&location=`
 
         window.open(googleUrl, '_blank')
-    } else {
-        // Для кількох подій створюємо ICS файл
-        const icsContent = createICSFile(selectedEvents)
-        const blob = new Blob([icsContent], { type: 'text/calendar' })
+    }
+
+    // Функція для створення ICS файлу
+    const createICSFile = (events: SyllabusEvent[]) => {
+        let icsContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Syllabus Parser//EN\r\nCALSCALE:GREGORIAN\r\n'
+
+        events.forEach(event => {
+            const date = new Date(event.date)
+            const dateStr = date.toISOString().split('T')[0].replace(/-/g, '')
+
+            icsContent += 'BEGIN:VEVENT\r\n'
+            icsContent += `UID:${event.id}-${Date.now()}@syllabusparser.com\r\n`
+            icsContent += `DTSTART;VALUE=DATE:${dateStr}\r\n`
+            icsContent += `DTEND;VALUE=DATE:${dateStr}\r\n`
+            icsContent += `SUMMARY:${event.title.replace(/[,;\\]/g, '\\$&')}\r\n`
+            if (event.description) {
+                icsContent += `DESCRIPTION:${event.description.replace(/[,;\\]/g, '\\$&')}\r\n`
+            }
+            icsContent += `CATEGORIES:${event.type.toUpperCase()}\r\n`
+            icsContent += 'STATUS:CONFIRMED\r\n'
+            icsContent += 'END:VEVENT\r\n'
+        })
+
+        icsContent += 'END:VCALENDAR\r\n'
+        return icsContent
+    }
+
+    // Функція завантаження ICS файлу
+    const downloadICSFile = (icsContent: string, eventCount: number) => {
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
         const url = URL.createObjectURL(blob)
 
         const link = document.createElement('a')
         link.href = url
         link.download = 'syllabus-events.ics'
+        link.style.display = 'none'
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
 
-        alert(`Downloaded ${selectedEvents.length} events as ICS file. You can import this file into Google Calendar, Outlook, or Apple Calendar.`)
+        setTimeout(() => {
+            alert(
+                `📅 Downloaded ${eventCount} events as "syllabus-events.ics"\n\n` +
+                `To add to your calendar:\n` +
+                `• Google Calendar: Go to Settings > Import & Export > Import\n` +
+                `• Outlook: File > Open & Export > Import/Export\n` +
+                `• Apple Calendar: File > Import > Select the downloaded file`
+            )
+        }, 500)
     }
-}
 
-export default function HomePage() {
-    const [file, setFile] = useState<File | null>(null)
-    const [isProcessing, setIsProcessing] = useState(false)
-    const [events, setEvents] = useState<SyllabusEvent[]>([])
-    const [viewMode, setViewMode] = useState<ViewMode>('list')
-    const [isClient, setIsClient] = useState(false)
-    const [manualText, setManualText] = useState('')
-    const [selectedEvents, setSelectedEvents] = useState<number[]>([])
-    const [selectAll, setSelectAll] = useState(false)
+    // Функція експорту вибраних подій
+    const exportSelectedToGoogle = () => {
+        const selectedEventsList = events.filter(event => selectedEvents.includes(event.id))
 
-    useEffect(() => {
-        setIsClient(true)
-    }, [])
+        if (selectedEventsList.length === 0) {
+            alert('Please select at least one event to export')
+            return
+        }
+
+        if (selectedEventsList.length === 1) {
+            exportSingleEvent(selectedEventsList[0])
+        } else {
+            const icsContent = createICSFile(selectedEventsList)
+            downloadICSFile(icsContent, selectedEventsList.length)
+        }
+    }
 
     const processData = async (formData: FormData) => {
         setIsProcessing(true)
@@ -156,9 +177,9 @@ export default function HomePage() {
                     id: index + 1
                 }))
                 setEvents(processedEvents)
-                // За замовчуванням вибираємо всі події
-                setSelectedEvents(processedEvents.map(e => e.id))
-                setSelectAll(true)
+                setSelectedEvents([])
+                setSelectAll(false)
+                setIsSelectionMode(false)
             } else {
                 alert('Error: ' + (result.error || 'Unknown error'))
             }
@@ -197,7 +218,16 @@ export default function HomePage() {
         setEvents([])
         setSelectedEvents([])
         setSelectAll(false)
+        setIsSelectionMode(false)
         setIsProcessing(false)
+    }
+
+    const toggleSelectionMode = () => {
+        setIsSelectionMode(!isSelectionMode)
+        if (!isSelectionMode) {
+            setSelectedEvents([])
+            setSelectAll(false)
+        }
     }
 
     const toggleEventSelection = (eventId: number) => {
@@ -223,12 +253,12 @@ export default function HomePage() {
 
     return (
         <div className="min-h-screen text-white relative" style={{backgroundColor: '#161513'}}>
-            {/* Soft background pattern like LawBandit */}
+            {/* Background patterns */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,_rgba(120,119,198,0.1)_0%,_transparent_50%)]"></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.05)_0%,_transparent_50%)]"></div>
 
             <div className="relative max-w-5xl mx-auto px-6 py-16">
-                {/* Header with LawBandit-style spacing */}
+                {/* Header */}
                 <div className="text-center mb-20">
                     <div className="inline-flex items-center gap-4 mb-8">
                         <div className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10">
@@ -244,18 +274,18 @@ export default function HomePage() {
                     </p>
                 </div>
 
-                {/* Main Content with soft styling */}
+                {/* Main Content */}
                 {!events.length ? (
                     /* Upload Section */
                     <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
-                        {/* Header with subtle gradient */}
+                        {/* Header */}
                         <div className="px-8 py-8 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
                             <h2 className="text-3xl font-light text-gray-900 mb-2">Upload Syllabus</h2>
                             <p className="text-gray-600 text-lg">Choose your preferred input method</p>
                         </div>
 
                         <div className="p-10">
-                            {/* PDF Upload with soft styling */}
+                            {/* PDF Upload */}
                             <div className="mb-12">
                                 <div className="flex items-start gap-6 mb-8">
                                     <div className="flex-shrink-0 w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100/50">
@@ -326,7 +356,7 @@ export default function HomePage() {
                                 )}
                             </div>
 
-                            {/* Elegant divider */}
+                            {/* Divider */}
                             <div className="relative mb-12">
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-gray-200"></div>
@@ -336,7 +366,7 @@ export default function HomePage() {
                                 </div>
                             </div>
 
-                            {/* Manual Text with improved styling */}
+                            {/* Manual Text */}
                             <div>
                                 <div className="flex items-start gap-6 mb-8">
                                     <div className="flex-shrink-0 w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100/50">
@@ -386,7 +416,7 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        {/* Soft tips section */}
+                        {/* Tips section */}
                         <div className="px-10 pb-10">
                             <div className="bg-gradient-to-r from-gray-50/80 to-blue-50/50 rounded-2xl p-8 border border-gray-100/50">
                                 <h4 className="font-medium text-gray-900 mb-4 text-lg">Tips for best results</h4>
@@ -408,26 +438,56 @@ export default function HomePage() {
                         </div>
                     </div>
                 ) : (
-                    /* Results Section with elegant design */
+                    /* Results Section */
                     <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
-                        {/* Header with selection controls */}
+                        {/* Header */}
                         <div className="px-10 py-8 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h2 className="text-3xl font-light text-gray-900 mb-2">Parsed Events</h2>
-                                    <p className="text-gray-600 text-lg">
-                                        Found {events.length} events • {selectedEvents.length} selected
+                                    <p className="text-gray-600 text-lg mb-1">
+                                        Found {events.length} events
+                                        {isSelectionMode && ` • ${selectedEvents.length} selected`}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        {isSelectionMode
+                                            ? "Select events for batch export or individual Google Calendar links"
+                                            : "Click 'Add to Google' for individual events or 'Select Multiple' for batch export"
+                                        }
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => exportSelectedToGoogle(events, selectedEvents)}
-                                        disabled={selectedEvents.length === 0}
-                                        className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-                                    >
-                                        <Calendar className="h-5 w-5" />
-                                        Add Selected to Google ({selectedEvents.length})
-                                    </button>
+                                    {isSelectionMode ? (
+                                        <>
+                                            <button
+                                                onClick={exportSelectedToGoogle}
+                                                disabled={selectedEvents.length === 0}
+                                                className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+                                                title={selectedEvents.length === 1 ? "Open in Google Calendar" : "Download ICS file for import"}
+                                            >
+                                                <Calendar className="h-5 w-5" />
+                                                {selectedEvents.length === 1
+                                                    ? 'Add to Google Calendar'
+                                                    : selectedEvents.length === 0
+                                                        ? 'Select Events to Export'
+                                                        : `Export ${selectedEvents.length} Events`
+                                                }
+                                            </button>
+                                            <button
+                                                onClick={toggleSelectionMode}
+                                                className="inline-flex items-center gap-3 px-6 py-3 border border-gray-300 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-50 transition-all duration-200"
+                                            >
+                                                Cancel Selection
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            onClick={toggleSelectionMode}
+                                            className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 text-white text-base font-medium rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                        >
+                                            Select Multiple
+                                        </button>
+                                    )}
                                     <button
                                         onClick={resetForm}
                                         className="inline-flex items-center gap-3 px-6 py-3 border border-gray-200 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-50 transition-all duration-200"
@@ -438,27 +498,29 @@ export default function HomePage() {
                             </div>
 
                             {/* Select All Controls */}
-                            <div className="mt-6 flex items-center gap-3 pt-4 border-t border-gray-100">
-                                <button
-                                    onClick={toggleSelectAll}
-                                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    <div className={`w-5 h-5 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
-                                        {selectAll && (
-                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    {selectAll ? 'Deselect All' : 'Select All'}
-                                </button>
-                                <span className="text-sm text-gray-500">
-                                    {selectedEvents.length === 1 ? '1 event selected' : `${selectedEvents.length} events selected`}
-                                </span>
-                            </div>
+                            {isSelectionMode && (
+                                <div className="mt-6 flex items-center gap-3 pt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={toggleSelectAll}
+                                        className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        <div className={`w-5 h-5 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
+                                            {selectAll && (
+                                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        {selectAll ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                    <span className="text-sm text-gray-500">
+                                        {selectedEvents.length === 1 ? '1 event selected' : `${selectedEvents.length} events selected`}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Events List with beautiful styling and checkboxes */}
+                        {/* Events List */}
                         <div className="p-10">
                             <div className="space-y-6">
                                 {events.map(event => {
@@ -468,23 +530,25 @@ export default function HomePage() {
                                         <div
                                             key={event.id}
                                             className={`border-l-4 ${style.color} p-8 rounded-r-2xl transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-1 ${
-                                                isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
+                                                isSelectionMode && isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
                                             }`}
                                         >
                                             <div className="flex items-start gap-4">
-                                                {/* Checkbox */}
-                                                <button
-                                                    onClick={() => toggleEventSelection(event.id)}
-                                                    className="flex-shrink-0 mt-1"
-                                                >
-                                                    <div className={`w-6 h-6 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
-                                                        {isSelected && (
-                                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                </button>
+                                                {/* Checkbox - тільки в режимі вибору */}
+                                                {isSelectionMode && (
+                                                    <button
+                                                        onClick={() => toggleEventSelection(event.id)}
+                                                        className="flex-shrink-0 mt-1"
+                                                    >
+                                                        <div className={`w-6 h-6 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
+                                                            {isSelected && (
+                                                                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                )}
 
                                                 {/* Event Content */}
                                                 <div className="flex-1">
@@ -509,10 +573,25 @@ export default function HomePage() {
                                                     )}
                                                 </div>
 
-                                                {/* Badge */}
-                                                <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
-                                                    {event.type}
-                                                </span>
+                                                {/* Right side */}
+                                                <div className="flex items-center gap-3">
+                                                    {/* Add to Google кнопка тільки НЕ в режимі вибору */}
+                                                    {!isSelectionMode && (
+                                                        <button
+                                                            onClick={() => exportSingleEvent(event)}
+                                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+                                                            title="Add this event to Google Calendar"
+                                                        >
+                                                            <Calendar className="h-4 w-4" />
+                                                            Add to Google
+                                                        </button>
+                                                    )}
+
+                                                    {/* Badge */}
+                                                    <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
+                                                        {event.type}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     )
