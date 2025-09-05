@@ -1,265 +1,314 @@
 // src/app/lib/pdfExtractor.ts
 
-// ВАЖЛИВО: Обхід багу pdf-parse з тестовим файлом
-async function extractWithPdfParse(buffer: Buffer): Promise<string> {
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+
+// Налаштування PDF.js для роботи в Node.js середовищі
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+interface PDFExtractionResult {
+    text: string;
+    pages: number;
+    method: string;
+}
+
+// Метод 1: Використання PDF.js (найкращий для більшості PDF)
+async function extractWithPDFJS(buffer: Buffer): Promise<PDFExtractionResult> {
     try {
-        console.log('🔄 Using pdf-parse with workaround...')
+        console.log('🔄 Trying PDF.js extraction...');
 
-        // Створюємо фейковий файл щоб обійти баг
-        const fs = require('fs')
-        const path = require('path')
+        const uint8Array = new Uint8Array(buffer);
+        const loadingTask = pdfjsLib.getDocument({
+            data: uint8Array,
+            verbosity: 0, // Відключаємо verbose логування
+        });
 
-        // Створюємо директорії якщо їх немає
-        const testDir = path.join(process.cwd(), 'test', 'data')
-        if (!fs.existsSync(testDir)) {
-            fs.mkdirSync(testDir, { recursive: true })
+        const pdf = await loadingTask.promise;
+        const numPages = pdf.numPages;
+
+        console.log(`📄 PDF has ${numPages} pages`);
+
+        const textParts: string[] = [];
+
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            try {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+
+                const pageText = textContent.items
+                    .filter((item: any) => item.str)
+                    .map((item: any) => item.str)
+                    .join(' ');
+
+                if (pageText.trim()) {
+                    textParts.push(pageText);
+                }
+
+                console.log(`✅ Page ${pageNum} extracted: ${pageText.length} chars`);
+            } catch (pageError) {
+                console.warn(`⚠️ Failed to extract page ${pageNum}:`, pageError);
+            }
         }
 
-        // Створюємо фейковий файл який pdf-parse очікує
-        const testFile = path.join(testDir, '05-versions-space.pdf')
-        if (!fs.existsSync(testFile)) {
-            // Записуємо мінімальний валідний PDF
-            const minimalPDF = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids[3 0 R]/Count 1>>\nendobj\n3 0 obj\n<</Type/Page/Parent 2 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>/MediaBox[0 0 612 792]/Contents 4 0 R>>\nendobj\n4 0 obj\n<</Length 44>>\nstream\nBT /F1 12 Tf 100 700 Td (Test) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000274 00000 n\ntrailer\n<</Size 5/Root 1 0 R>>\nstartxref\n366\n%%EOF', 'latin1')
-            fs.writeFileSync(testFile, minimalPDF)
-            console.log('✅ Created workaround file')
-        }
+        const fullText = textParts.join('\n\n').trim();
 
-        // Тепер імпортуємо pdf-parse
-        const pdfParse = require('pdf-parse')
-
-        // Парсимо наш реальний PDF
-        const data = await pdfParse(buffer)
-
-        console.log(`✅ pdf-parse successful!`)
-        console.log(`📄 Pages: ${data.numpages}`)
-        console.log(`📏 Text length: ${data.text.length}`)
-
-        return data.text
+        return {
+            text: fullText,
+            pages: numPages,
+            method: 'PDF.js'
+        };
 
     } catch (error) {
-        console.error('❌ pdf-parse with workaround failed:', error)
-        throw error
+        console.error('❌ PDF.js extraction failed:', error);
+        throw error;
     }
 }
 
-// Альтернативний метод: витягування тексту безпосередньо з буфера
-function extractRawText(buffer: Buffer): string {
-    console.log('🔄 Extracting raw text from buffer...')
+// Метод 2: Використання pdf-parse з правильним налаштуванням
+async function extractWithPdfParse(buffer: Buffer): Promise<PDFExtractionResult> {
+    try {
+        console.log('🔄 Trying pdf-parse extraction...');
 
-    const content = buffer.toString('binary')
-    const textParts: string[] = []
+        // Динамічний імпорт pdf-parse
+        const pdfParse = await import('pdf-parse');
 
-    // Метод 1: Шукаємо текст між BT та ET (PDF text blocks)
-    const btEtRegex = /BT([\s\S]*?)ET/g
-    let match
+        const options = {
+            // Налаштування для кращого витягування тексту
+            normalizeWhitespace: false,
+            disableCombineTextItems: false,
+        };
 
-    while ((match = btEtRegex.exec(content)) !== null) {
-        const block = match[1]
+        const data = await pdfParse.default(buffer, options);
 
-        // Витягуємо текст з Tj операторів (звичайний текст)
-        const tjRegex = /\(((?:[^\\()]|\\.)*)\)\s*Tj/g
-        let tjMatch
+        console.log(`📄 pdf-parse: ${data.numpages} pages, ${data.text.length} chars`);
 
-        while ((tjMatch = tjRegex.exec(block)) !== null) {
-            let text = tjMatch[1]
+        return {
+            text: data.text,
+            pages: data.numpages,
+            method: 'pdf-parse'
+        };
 
-            // Декодуємо escape sequences
-            text = text
-                .replace(/\\n/g, ' ')
-                .replace(/\\r/g, ' ')
-                .replace(/\\t/g, ' ')
-                .replace(/\\\(/g, '(')
-                .replace(/\\\)/g, ')')
-                .replace(/\\\\/g, '\\')
+    } catch (error) {
+        console.error('❌ pdf-parse extraction failed:', error);
+        throw error;
+    }
+}
 
-            // Чистимо від спеціальних символів
-            text = text.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ')
+// Метод 3: Простий regex парсер (fallback)
+function extractRawText(buffer: Buffer): PDFExtractionResult {
+    console.log('🔄 Using raw text extraction...');
 
-            if (text.trim().length > 0) {
-                textParts.push(text.trim())
-            }
+    try {
+        const content = buffer.toString('latin1');
+        const textParts: string[] = [];
+
+        // Метод 1: BT...ET блоки (найточніший)
+        const btEtRegex = /BT\s+([\s\S]*?)\s+ET/gi;
+        let match;
+
+        while ((match = btEtRegex.exec(content)) !== null) {
+            const block = match[1];
+
+            // Витягуємо текст з різних PDF операторів
+            const textOperators = [
+                /\(([^)]+)\)\s*Tj/g,           // Простий текст
+                /\(([^)]+)\)\s*TJ/g,           // Текст з масивом
+                /<([0-9A-Fa-f]+)>\s*Tj/g,     // Hex-encoded текст
+            ];
+
+            textOperators.forEach(regex => {
+                let textMatch;
+                while ((textMatch = regex.exec(block)) !== null) {
+                    let text = textMatch[1];
+
+                    // Декодуємо hex якщо потрібно
+                    if (regex.source.includes('A-Fa-f')) {
+                        try {
+                            text = Buffer.from(text, 'hex').toString('utf8');
+                        } catch {
+                            continue;
+                        }
+                    }
+
+                    // Очищаємо escape sequences
+                    text = text
+                        .replace(/\\n/g, '\n')
+                        .replace(/\\r/g, '\r')
+                        .replace(/\\t/g, '\t')
+                        .replace(/\\\(/g, '(')
+                        .replace(/\\\)/g, ')')
+                        .replace(/\\\\/g, '\\')
+                        .trim();
+
+                    if (text.length > 2 && /[a-zA-Z]/.test(text)) {
+                        textParts.push(text);
+                    }
+                }
+            });
         }
 
-        // Витягуємо текст з TJ операторів (масиви тексту)
-        const tjArrayRegex = /\[(.*?)\]\s*TJ/g
-        let tjArrayMatch
+        // Метод 2: Stream objects з більш агресивним підходом
+        if (textParts.length < 10) {
+            console.log('⚠️ Few text blocks found, trying stream extraction...');
 
-        while ((tjArrayMatch = tjArrayRegex.exec(block)) !== null) {
-            const arrayContent = tjArrayMatch[1]
+            const streamRegex = /stream\s*([\s\S]*?)\s*endstream/gi;
+            while ((match = streamRegex.exec(content)) !== null) {
+                const streamData = match[1];
 
-            // Витягуємо всі рядки в дужках
-            const stringRegex = /\(((?:[^\\()]|\\.)*)\)/g
-            let stringMatch
+                // Витягуємо читабельний текст зі stream
+                const readableText = streamData
+                    .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
 
-            while ((stringMatch = stringRegex.exec(arrayContent)) !== null) {
-                let text = stringMatch[1]
+                // Перевіряємо чи це текстовий контент
+                const words = (readableText.match(/[a-zA-Z]{2,}/g) || []).length;
+                const numbers = (readableText.match(/\d+/g) || []).length;
 
-                text = text
-                    .replace(/\\n/g, ' ')
-                    .replace(/\\r/g, ' ')
-                    .replace(/\\t/g, ' ')
-                    .replace(/\\\(/g, '(')
-                    .replace(/\\\)/g, ')')
-                    .replace(/\\\\/g, '\\')
-                    .replace(/[\x00-\x1F\x7F-\xFF]/g, ' ')
-
-                if (text.trim().length > 0) {
-                    textParts.push(text.trim())
+                if (words > 5 && readableText.length > 30 && words > numbers) {
+                    textParts.push(readableText);
                 }
             }
         }
-    }
 
-    // Метод 2: Пошук тексту в stream об'єктах
-    const streamRegex = /stream([\s\S]*?)endstream/g
-
-    while ((match = streamRegex.exec(content)) !== null) {
-        const streamContent = match[1]
-
-        // Очищаємо і шукаємо читабельний текст
-        const cleanedStream = streamContent
-            .replace(/[^\x20-\x7E\n\r\t]/g, ' ')  // Тільки друковані ASCII
+        const result = textParts
+            .filter(text => text.length > 1)
+            .join(' ')
             .replace(/\s+/g, ' ')
-            .trim()
+            .trim();
 
-        // Перевіряємо чи це текст (має містити слова)
-        const words = cleanedStream.match(/[a-zA-Z]{3,}/g) || []
+        console.log(`📏 Raw extraction: ${result.length} characters`);
 
-        if (words.length > 10 && cleanedStream.length > 50) {
-            // Додаємо тільки якщо схоже на реальний текст
-            if (!/^[0-9\s\.\-\+]+$/.test(cleanedStream)) { // Не тільки числа
-                textParts.push(cleanedStream)
-            }
-        }
+        return {
+            text: result,
+            pages: 1,
+            method: 'Raw extraction'
+        };
+
+    } catch (error) {
+        console.error('❌ Raw extraction failed:', error);
+        throw error;
+    }
+}
+
+// Функція очищення та валідації тексту
+function cleanAndValidateText(text: string, method: string): string {
+    if (!text || text.length < 10) {
+        throw new Error(`${method} returned empty or too short text`);
     }
 
-    // Об'єднуємо все знайдене
-    let result = textParts.join(' ')
+    // Базове очищення
+    let cleaned = text
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/^\s+|\s+$/g, '');
 
-    // Фінальне очищення
-    result = result
-        .replace(/\s+/g, ' ')           // Нормалізуємо пробіли
-        .replace(/([a-z])([A-Z])/g, '$1 $2')  // Розділяємо CamelCase
-        .trim()
+    // Перевіряємо якість тексту
+    const words = (cleaned.match(/[a-zA-Z]{2,}/g) || []).length;
+    const hasDatePatterns = /\d{4}|\d{1,2}\/\d{1,2}|january|february|march|april|may|june|july|august|september|october|november|december/i.test(cleaned);
 
-    console.log(`📏 Raw extraction found: ${result.length} characters`)
+    console.log(`📊 Text quality: ${words} words, dates: ${hasDatePatterns}`);
 
-    // Якщо текст занадто короткий, робимо агресивніший пошук
-    if (result.length < 500) {
-        console.log('⚠️ Text too short, trying aggressive search...')
-
-        // Шукаємо будь-які послідовності читабельного тексту
-        const allText = content
-            .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-            .replace(/\s+/g, ' ')
-
-        // Розбиваємо на частини і фільтруємо
-        const chunks = allText.split(/\s{2,}/)
-        const validChunks = chunks.filter(chunk => {
-            const words = chunk.match(/[a-zA-Z]{3,}/g) || []
-            return words.length > 3 && chunk.length > 20
-        })
-
-        const aggressiveResult = validChunks.join(' ').substring(0, 100000)
-
-        if (aggressiveResult.length > result.length) {
-            result = aggressiveResult
-            console.log(`📏 Aggressive search found: ${result.length} characters`)
-        }
+    if (words < 20) {
+        throw new Error(`Text quality too low: only ${words} words found`);
     }
 
-    return result
+    if (!hasDatePatterns) {
+        console.warn('⚠️ No date patterns found in text - might be problematic for syllabus parsing');
+    }
+
+    return cleaned;
 }
 
 // ГОЛОВНА ФУНКЦІЯ
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-    console.log('📱 Starting PDF text extraction...')
-    console.log(`📊 Buffer size: ${buffer.length} bytes (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`)
+    console.log('📱 Starting PDF text extraction...');
+    console.log(`📊 Buffer: ${buffer.length} bytes (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`);
 
-    // Валідація буфера
+    // Валідація
     if (!buffer || buffer.length === 0) {
-        throw new Error('Empty PDF buffer')
+        throw new Error('Empty PDF buffer provided');
+    }
+
+    if (buffer.length > 50 * 1024 * 1024) { // 50MB limit
+        throw new Error('PDF file too large (>50MB). Please use a smaller file.');
     }
 
     // Перевірка PDF підпису
-    const header = buffer.toString('ascii', 0, 8)
-    console.log(`🔍 PDF header: "${header}"`)
-
+    const header = buffer.toString('ascii', 0, 8);
     if (!header.startsWith('%PDF')) {
-        throw new Error('Invalid PDF file - not a PDF document')
+        throw new Error('Invalid file format - not a PDF document');
     }
 
-    let bestResult = ''
-    const errors: string[] = []
+    console.log(`🔍 PDF version: ${header}`);
 
-    // Спробуємо різні методи
+    // Спробуємо різні методи витягування тексту
     const methods = [
         {
-            name: 'pdf-parse-workaround',
-            func: () => extractWithPdfParse(buffer)
+            name: 'PDF.js',
+            extract: () => extractWithPDFJS(buffer)
         },
         {
-            name: 'raw-text-extraction',
-            func: () => extractRawText(buffer)
+            name: 'pdf-parse',
+            extract: () => extractWithPdfParse(buffer)
+        },
+        {
+            name: 'Raw extraction',
+            extract: () => extractRawText(buffer)
         }
-    ]
+    ];
 
+    const results: Array<{ result: PDFExtractionResult; error?: Error }> = [];
+
+    // Пробуємо кожний метод
     for (const method of methods) {
         try {
-            console.log(`\n🎯 Trying method: ${method.name}`)
+            console.log(`\n🎯 Trying ${method.name}...`);
+            const result = await method.extract();
 
-            const text = await method.func()
-
-            // Валідація результату
-            if (text && text.length > 50) {
-                // Очищаємо текст
-                const cleaned = text
-                    .replace(/\r\n/g, '\n')
-                    .replace(/\n{3,}/g, '\n\n')
-                    .replace(/\s+/g, ' ')
-                    .trim()
-
-                // Зберігаємо найдовший результат
-                if (cleaned.length > bestResult.length) {
-                    bestResult = cleaned
-
-                    // Перевіряємо якість тексту
-                    const hasWords = (cleaned.match(/[a-zA-Z]{3,}/g) || []).length > 20
-                    const hasDatePattern = /\d{4}|\d{1,2}\/\d{1,2}|January|February|March|April|May|June|July|August|September|October|November|December/i.test(cleaned)
-
-                    // Якщо текст виглядає добре - повертаємо
-                    if (cleaned.length > 200 && hasWords) {
-                        console.log(`✅ Successfully extracted ${cleaned.length} characters using ${method.name}`)
-                        console.log(`📝 Preview: "${cleaned.substring(0, 300)}..."`)
-
-                        if (!hasDatePattern) {
-                            console.warn('⚠️ Warning: No dates found in text')
-                        }
-
-                        return cleaned
-                    }
-                }
+            if (result.text && result.text.length > 50) {
+                results.push({ result });
+                console.log(`✅ ${method.name} success: ${result.text.length} chars`);
+            } else {
+                console.log(`⚠️ ${method.name} returned insufficient text`);
             }
 
         } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error)
-            console.error(`❌ Method ${method.name} failed: ${msg}`)
-            errors.push(`${method.name}: ${msg}`)
+            const err = error instanceof Error ? error : new Error(String(error));
+            results.push({ result: { text: '', pages: 0, method: method.name }, error: err });
+            console.error(`❌ ${method.name} failed:`, err.message);
         }
     }
 
-    // Повертаємо найкращий результат якщо є
-    if (bestResult.length > 100) {
-        console.warn('⚠️ Partial extraction successful')
-        console.warn('⚠️ Text quality may be poor. Consider copying text manually.')
-        return bestResult
+    // Вибираємо найкращий результат
+    const successful = results.filter(r => r.result.text.length > 50 && !r.error);
+
+    if (successful.length === 0) {
+        const errors = results.map(r => r.error?.message || 'Unknown error').join('; ');
+        throw new Error(
+            `Could not extract text from PDF using any method.\n` +
+            `Errors: ${errors}\n\n` +
+            `Possible solutions:\n` +
+            `1. Try copying and pasting text manually\n` +
+            `2. Convert PDF to text using online tools\n` +
+            `3. Use a different PDF file\n` +
+            `4. Check if PDF is password protected or contains only images`
+        );
     }
 
-    // Якщо всі методи не спрацювали
-    throw new Error(
-        `Could not extract readable text from PDF.\n` +
-        `Tried methods: ${errors.join('; ')}\n` +
-        `This PDF might be: 1) Scanned image (needs OCR), 2) Encrypted, 3) Using embedded fonts.\n` +
-        `Please copy and paste the text manually into the text field.`
-    )
+    // Сортуємо за довжиною тексту (більше = краще)
+    successful.sort((a, b) => b.result.text.length - a.result.text.length);
+    const best = successful[0].result;
+
+    console.log(`🏆 Best result: ${best.method} with ${best.text.length} characters`);
+
+    // Очищаємо та валідуємо
+    const cleanedText = cleanAndValidateText(best.text, best.method);
+
+    // Логування для дебагу
+    console.log(`✅ Final text: ${cleanedText.length} characters`);
+    console.log(`📝 Preview: "${cleanedText.substring(0, 200)}..."`);
+
+    return cleanedText;
 }
