@@ -29,15 +29,6 @@ export async function POST(request: NextRequest) {
 
             console.log('📁 Processing file:', file.name, 'size:', file.size, 'type:', file.type)
 
-            // Validate file type
-            if (!file.name.toLowerCase().endsWith('.pdf')) {
-                console.error('❌ Invalid file type:', file.name)
-                return NextResponse.json({
-                    success: false,
-                    error: 'Please upload a PDF file'
-                })
-            }
-
             // Convert File to Buffer
             console.log('🔄 Converting file to buffer...')
             const arrayBuffer = await file.arrayBuffer()
@@ -49,38 +40,79 @@ export async function POST(request: NextRequest) {
                 console.log('🔄 Extracting text from PDF...')
                 textToAnalyze = await extractTextFromPDF(buffer)
                 console.log('✅ PDF text extracted successfully, length:', textToAnalyze.length)
+
+                // ВАЖЛИВО: Перевіряємо чи текст читабельний
+                const readableWords = textToAnalyze.match(/[a-zA-Z]{3,}/g) || []
+                const readableRatio = readableWords.length * 5 / textToAnalyze.length // Приблизно
+
+                console.log(`📊 Text quality check: ${readableWords.length} words found, ratio: ${readableRatio.toFixed(2)}`)
+
+                if (readableRatio < 0.1) {
+                    console.warn('⚠️ Extracted text appears to be corrupted or encrypted')
+
+                    // Спробуємо надіслати в OpenAI все одно - може він щось знайде
+                    console.log('🤖 Attempting AI analysis despite poor text quality...')
+
+                    // Додаємо інструкцію для OpenAI
+                    textToAnalyze = `IMPORTANT: The following text was extracted from a PDF and may be corrupted. Please try to find any dates, assignments, exams, or academic events even if the text is partially unreadable. Focus on patterns that look like dates (numbers, months) and academic terms.\n\n${textToAnalyze}`
+                }
+
             } catch (extractError) {
                 console.error('❌ PDF extraction failed:', extractError)
+
+                // НОВИЙ ПІДХІД: Якщо екстракція не вдалась, пропонуємо альтернативи
                 return NextResponse.json({
                     success: false,
-                    error: 'Could not extract text from PDF. Please try a different file or paste text manually.',
-                    details: extractError instanceof Error ? extractError.message : 'Unknown error'
+                    error: 'Could not extract text from PDF',
+                    message: 'This PDF appears to be encrypted, scanned, or uses special encoding.',
+                    suggestions: [
+                        'Try opening the PDF in Google Docs (it will auto-convert to text)',
+                        'Copy and paste the text manually from the PDF viewer',
+                        'Use an online PDF to text converter first',
+                        'Make sure the PDF contains actual text (not scanned images)'
+                    ]
                 })
             }
         }
 
-        // Validate extracted text
-        if (!textToAnalyze || textToAnalyze.length < 10) {
-            console.error('❌ Text too short:', textToAnalyze.length)
-            return NextResponse.json({
-                success: false,
-                error: `Extracted text is too short (${textToAnalyze.length} characters). Please check the file or paste text manually.`
-            })
-        }
-
         // Truncate text if too long for OpenAI
-        const maxTextLength = 300000
+        const maxTextLength = 30000 // Зменшено для економії токенів
         if (textToAnalyze.length > maxTextLength) {
             console.log(`⚠️ Text too long (${textToAnalyze.length} chars), truncating to ${maxTextLength}`)
-            textToAnalyze = textToAnalyze.substring(0, maxTextLength)
+
+            // Намагаємось зберегти початок і кінець (часто там є важливі дати)
+            const startText = textToAnalyze.substring(0, maxTextLength * 0.7)
+            const endText = textToAnalyze.substring(textToAnalyze.length - maxTextLength * 0.3)
+            textToAnalyze = startText + '\n...[truncated]...\n' + endText
         }
 
         console.log('🤖 Sending to OpenAI for analysis...')
-        console.log('📊 Text preview:', textToAnalyze.substring(0, 200) + '...')
+        console.log('📊 Text preview (first 200 chars):', textToAnalyze.substring(0, 200).replace(/[^\x20-\x7E]/g, '?'))
 
         // Analyze text with OpenAI
         const events = await analyzeTextWithOpenAI(textToAnalyze)
         console.log('✅ OpenAI analysis complete. Events found:', events.length)
+
+        // Якщо OpenAI не знайшов подій, але ми знаємо що текст був
+        if (events.length === 0 && textToAnalyze.length > 100) {
+            console.warn('⚠️ No events found despite having text')
+
+            return NextResponse.json({
+                success: false,
+                error: 'Could not find any events in the PDF',
+                message: 'The PDF text was extracted but no dates or events were found.',
+                suggestions: [
+                    'Make sure this is actually a syllabus with dates',
+                    'Try copying specific sections with dates manually',
+                    'Check if the PDF is in English'
+                ],
+                debug: {
+                    textExtracted: true,
+                    textLength: textToAnalyze.length,
+                    sampleText: textToAnalyze.substring(0, 500).replace(/[^\x20-\x7E]/g, '?')
+                }
+            })
+        }
 
         // Validate and clean up events
         const validEvents = events.filter(event => {
