@@ -2,352 +2,283 @@
 
 import { OpenAI } from 'openai'
 
-// Функція для визначення типу події з тексту
-function determineEventType(text: string): string {
-    const lowerText = text.toLowerCase()
-
-    if (lowerText.includes('exam') || lowerText.includes('test') || lowerText.includes('quiz') || lowerText.includes('midterm') || lowerText.includes('final')) {
-        return 'exam'
-    }
-    if (lowerText.includes('assignment') || lowerText.includes('due') || lowerText.includes('submit') || lowerText.includes('complete') || lowerText.includes('writing')) {
-        return 'assignment'
-    }
-    if (lowerText.includes('read') || lowerText.includes('chapter') || lowerText.includes('pages') || lowerText.includes('handbook') || lowerText.includes('bluebook')) {
-        return 'reading'
-    }
-    if (lowerText.includes('presentation') || lowerText.includes('oral') || lowerText.includes('class') || lowerText.includes('lecture') || lowerText.includes('meeting')) {
-        return 'class'
-    }
-    return 'other'
-}
-
-// Функція для очищення та підготовки тексту
-function preprocessText(text: string): string {
-    console.log('🧹 Preprocessing text...')
-
-    // Видаляємо явний "шум"
-    let cleaned = text
-        .split('\n')
-        .map(line => {
-            const specialCharsCount = (line.match(/[^\x20-\x7E]/g) || []).length
-            const totalChars = line.length
-
-            if (totalChars > 0 && specialCharsCount / totalChars > 0.3) {
-                return ''
-            }
-
-            return line.replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-        })
-        .filter(line => line.trim().length > 0)
-        .join('\n')
-
-    // Шукаємо початок силабусу
-    const syllabusMarkers = [
-        'syllabus',
-        'course outline',
-        'course schedule',
-        'week',
-        'date',
-        'assignments',
-        'schedule',
-        'calendar'
-    ]
-
-    let syllabusStartIndex = -1
-    const lowerText = cleaned.toLowerCase()
-
-    for (const marker of syllabusMarkers) {
-        const index = lowerText.indexOf(marker)
-        if (index !== -1 && (syllabusStartIndex === -1 || index < syllabusStartIndex)) {
-            syllabusStartIndex = index
-        }
-    }
-
-    if (syllabusStartIndex > 0 && syllabusStartIndex < 5000) {
-        console.log(`✂️ Cutting first ${syllabusStartIndex} characters of noise`)
-        cleaned = cleaned.substring(syllabusStartIndex)
-    }
-
-    return cleaned
-}
-
-// Основна функція аналізу
-export async function analyzeTextWithOpenAI(rawText: string) {
-    const text = preprocessText(rawText)
-
-    if (!process.env.OPENAI_API_KEY) {
-        console.error('OPENAI_API_KEY is not configured')
-        return extractDatesWithRegex(text)
-    }
-
-    const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-    })
-
-    // НОВИЙ ПОКРАЩЕНИЙ ПРОМПТ
-    const systemPrompt = `You are an expert at extracting academic events from course syllabi, especially from tables and structured lists.
-
-CRITICAL PARSING RULES:
-
-1. TABLE STRUCTURE:
-   - "Week" column = week number (use it for context)
-   - "Date" column = the date for ALL items in that row
-   - "Assignments/Readings" column = list of tasks for that date
-
-2. BULLET POINTS = SEPARATE EVENTS:
-   - EACH bullet point (•, -, *, etc.) is a SEPARATE event
-   - If there are 4 bullet points for February 7, create 4 SEPARATE events all dated February 7
-   - Never combine multiple bullet points into one event
-
-3. EVENT TYPES:
-   - "Read:" or "Reading:" → type: "reading"
-   - "Writing Assignment Due:", "Complete:", "Submit:" → type: "assignment"  
-   - "Exam:", "Test:", "Quiz:", "Midterm:", "Final:" → type: "exam"
-   - "Oral arguments:", "Presentation:" → type: "class"
-   - "Optional:", "Meeting:", "Office hours:" → type: "other"
-
-4. DATE HANDLING:
-   - If only month/day given: Sept-Dec = 2024, Jan-May = 2025
-   - Current context: Spring 2025 semester
-   - One date applies to ALL bullets/items in that section
-
-5. TITLE EXTRACTION:
-   - Remove prefixes like "Read:", "Complete:", "Due:"
-   - Keep specific details (chapter numbers, page ranges, assignment names)
-   - Be descriptive but concise
-
-EXAMPLE:
-If you see:
-"February 7:
-• Read: Handbook Chapter 39, pages 347-61
-• Read: Understanding the Bluebook Chapter 8
-• Writing Assignment Due: Motion
-• Optional: Podcast 4"
-
-You must create 4 SEPARATE events:
-1. {"title": "Handbook Chapter 39, pages 347-61", "date": "2025-02-07", "type": "reading"}
-2. {"title": "Understanding the Bluebook Chapter 8", "date": "2025-02-07", "type": "reading"}
-3. {"title": "Motion", "date": "2025-02-07", "type": "assignment"}
-4. {"title": "Podcast 4", "date": "2025-02-07", "type": "other"}
-
-RESPONSE FORMAT:
-{
-  "events": [
-    {"title": "Event Name", "date": "YYYY-MM-DD", "type": "category", "description": "optional"}
-  ]
-}`
-
-    const userPrompt = `Extract ALL events from this syllabus. 
-REMEMBER: Each bullet point or list item is a SEPARATE event!
-If February 7 has 4 bullets, create 4 events for February 7.
-
-SYLLABUS TEXT:
-${text.substring(0, 8000)}`
-
-    try {
-        console.log('🤖 Calling OpenAI API...')
-
-        const response = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo', // або 'gpt-4' для кращої якості
-            messages: [
-                {
-                    role: 'system',
-                    content: systemPrompt
-                },
-                {
-                    role: 'user',
-                    content: userPrompt
-                }
-            ],
-            temperature: 0.1,
-            max_tokens: 3000, // Збільшено для більшої кількості подій
-            response_format: { type: "json_object" }
-        })
-
-        const content = response.choices[0]?.message?.content
-        console.log('OpenAI raw response:', content?.substring(0, 500))
-
-        if (!content) {
-            throw new Error('Empty response from OpenAI')
-        }
-
-        const parsedData = JSON.parse(content.trim())
-        let events = parsedData.events || []
-
-        // Постпроцесинг: додаткова валідація та очищення
-        events = events.map((event: any) => {
-            // Очищаємо назву від префіксів
-            let title = event.title || ''
-            title = title
-                .replace(/^(Read:|Reading:|Complete:|Due:|Submit:|Optional:)\s*/i, '')
-                .replace(/^•\s*/, '')
-                .replace(/^-\s*/, '')
-                .replace(/^\*\s*/, '')
-                .replace(/^\d+\.\s*/, '')
-                .trim()
-
-            // Якщо тип не визначено правильно, спробуємо ще раз
-            if (event.type === 'other' || !event.type) {
-                event.type = determineEventType(event.title + ' ' + (event.description || ''))
-            }
-
-            return {
-                ...event,
-                title: title
-            }
-        })
-
-        // Фільтруємо невалідні події
-        events = events.filter((event: any) => {
-            if (!event.date) return false
-
-            const date = new Date(event.date)
-            if (isNaN(date.getTime())) return false
-
-            const year = date.getFullYear()
-            if (year < 2024 || year > 2026) return false
-
-            if (!event.title || event.title.length < 3) return false
-
-            return true
-        })
-
-        console.log(`✅ Successfully extracted ${events.length} events`)
-
-        // Групуємо за датою для діагностики
-        const eventsByDate: {[key: string]: number} = {}
-        events.forEach((event: any) => {
-            eventsByDate[event.date] = (eventsByDate[event.date] || 0) + 1
-        })
-        console.log('📅 Events per date:', eventsByDate)
-
-        return events
-
-    } catch (error) {
-        console.error('OpenAI analysis failed:', error)
-        console.log('Trying enhanced fallback extraction...')
-        return enhancedRegexExtraction(text)
-    }
-}
-
-// Покращена regex екстракція для таблиць
-function enhancedRegexExtraction(text: string): any[] {
-    console.log('🔍 Using enhanced regex extraction...')
-
-    const events: any[] = []
-    const lines = text.split('\n')
-
-    let currentDate = ''
-    let currentWeek = ''
-    let isNoClass = false
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (!line) continue
-
-        // Шукаємо дату (навіть якщо там є "NO CLASS")
-        const dateMatch = line.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})\b/i)
-        if (dateMatch) {
-            const month = dateMatch[1]
-            const day = dateMatch[2]
-            const monthNum = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
-                .indexOf(month.toLowerCase()) + 1
-
-            // Визначаємо рік
-            const year = monthNum >= 9 ? 2024 : 2025
-            currentDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-
-            // Перевіряємо чи це "NO CLASS"
-            isNoClass = line.toLowerCase().includes('no class')
-
-            console.log(`📅 Found date: ${currentDate}${isNoClass ? ' (NO CLASS)' : ''}`)
-        }
-
-        // Якщо є поточна дата, шукаємо події (навіть для NO CLASS днів)
-        if (currentDate) {
-            // Шукаємо bullet points або нумеровані списки
-            const bulletMatch = line.match(/^[•\-\*]\s*(.+)/) ||
-                line.match(/^\d+\.\s*(.+)/) ||
-                (line.includes('Read:') || line.includes('Complete:') || line.includes('Due:') ? [null, line] : null)
-
-            if (bulletMatch) {
-                const eventText = bulletMatch[1] || line
-
-                // Очищаємо текст (видаляємо "NO CLASS" з назви)
-                let title = eventText
-                    .replace(/^(Read:|Reading:|Complete:|Due:|Submit:|Optional:|Writing Assignment Due:)\s*/i, '')
-                    .replace(/\bNO CLASS\b/gi, '')
-                    .trim()
-
-                if (title.length > 3) {
-                    const eventType = determineEventType(eventText)
-
-                    events.push({
-                        title: title.substring(0, 200),
-                        date: currentDate,
-                        type: eventType,
-                        description: isNoClass ? 'No class meeting, but assignment due' : ''
-                    })
-
-                    console.log(`  → Added ${eventType}: ${title.substring(0, 50)}...${isNoClass ? ' (NO CLASS day)' : ''}`)
-                }
-            }
-        }
-    }
-
-    console.log(`📊 Enhanced regex extracted ${events.length} events`)
-    return events
-}
-
-// Стара regex функція (fallback)
+// Покращений fallback regex екстрактор
 function extractDatesWithRegex(text: string): any[] {
-    const events = []
-    const lines = text.split('\n')
+    console.log('🔍 Using regex fallback extraction...');
+    const events = [];
+    const lines = text.split(/[\n\r]+/);
 
-    const monthNames = [
-        'january', 'february', 'march', 'april', 'may', 'june',
-        'july', 'august', 'september', 'october', 'november', 'december'
-    ]
+    // Більш широкі паттерни для дат
+    const datePatterns = [
+        // Повні дати з роками
+        /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
+        /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
+        // Дати без року (припускаємо 2024-2025 навчальний рік)
+        /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?/gi,
+        /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?/gi,
+        // Числові формати
+        /\d{1,2}\/\d{1,2}\/\d{2,4}/g,
+        /\d{4}-\d{2}-\d{2}/g,
+        /\d{1,2}\/\d{1,2}/g, // MM/DD без року
+    ];
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        const lowerLine = line.toLowerCase()
+    const eventKeywords = {
+        exam: ['exam', 'test', 'quiz', 'midterm', 'final', 'assessment', 'evaluation'],
+        assignment: ['assignment', 'homework', 'hw', 'project', 'paper', 'essay', 'due', 'submit', 'submission', 'report'],
+        reading: ['reading', 'read', 'chapter', 'ch.', 'ch', 'pages', 'pp.', 'book', 'article'],
+        class: ['class', 'lecture', 'session', 'meeting', 'seminar', 'workshop', 'discussion'],
+        other: ['deadline', 'event', 'activity', 'presentation', 'conference', 'break', 'holiday', 'no class']
+    };
 
-        let dateMatch = null
-        let dateStr = ''
+    function parseDate(dateStr: string): Date | null {
+        const currentYear = new Date().getFullYear();
 
-        // Формат: January 15, 2025 або January 15
-        const monthDayYear = new RegExp(`(${monthNames.join('|')})\\s+(\\d{1,2}),?\\s*(\\d{4})?`, 'i')
-        dateMatch = line.match(monthDayYear)
-        if (dateMatch) {
-            const month = monthNames.indexOf(dateMatch[1].toLowerCase())
-            const day = parseInt(dateMatch[2])
-            let year = dateMatch[3] ? parseInt(dateMatch[3]) : (month >= 8 ? 2024 : 2025)
-            dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        // Спробуємо стандартний парсінг
+        let date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date;
         }
 
-        if (dateStr) {
-            // Шукаємо всі події для цієї дати в наступних рядках
-            for (let j = i; j < Math.min(i + 10, lines.length); j++) {
-                const eventLine = lines[j]
+        // Якщо немає року, додаємо його
+        const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+            'july', 'august', 'september', 'october', 'november', 'december'];
 
-                if (eventLine.match(/^[•\-\*]/)) {
-                    let title = eventLine.replace(/^[•\-\*]\s*/, '').trim()
-                    const eventType = determineEventType(eventLine)
+        const lowerDateStr = dateStr.toLowerCase();
+
+        for (let i = 0; i < monthNames.length; i++) {
+            if (lowerDateStr.includes(monthNames[i])) {
+                const dayMatch = dateStr.match(/\d{1,2}/);
+                if (dayMatch) {
+                    const month = i;
+                    const day = parseInt(dayMatch[0]);
+
+                    // Визначаємо рік: вересень-грудень = поточний рік, січень-травень = наступний рік
+                    let year = currentYear;
+                    if (month >= 0 && month <= 4) { // січень-травень
+                        year = currentYear + 1;
+                    }
+
+                    date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) {
+                        return date;
+                    }
+                }
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.length < 5) continue; // Пропускаємо короткі рядки
+
+        for (const pattern of datePatterns) {
+            const matches = Array.from(line.matchAll(pattern));
+
+            for (const match of matches) {
+                const dateStr = match[0];
+                const date = parseDate(dateStr);
+
+                if (date && !isNaN(date.getTime())) {
+                    // Визначаємо тип події
+                    let eventType = 'other';
+                    const lowerLine = line.toLowerCase();
+
+                    for (const [type, keywords] of Object.entries(eventKeywords)) {
+                        if (keywords.some(keyword => lowerLine.includes(keyword.toLowerCase()))) {
+                            eventType = type;
+                            break;
+                        }
+                    }
+
+                    // Витягуємо назву події
+                    const beforeDate = line.substring(0, match.index).trim();
+                    const afterDate = line.substring(match.index! + match[0].length).trim();
+
+                    let title = '';
+                    if (beforeDate.length > 10) {
+                        title = beforeDate;
+                    } else if (afterDate.length > 10) {
+                        title = afterDate;
+                    } else {
+                        title = `${beforeDate} ${afterDate}`.trim();
+                    }
+
+                    // Очищаємо назву
+                    title = title
+                        .replace(/^\W+|\W+$/g, '') // Прибираємо спеціальні символи з початку/кінця
+                        .replace(/\s+/g, ' ')
+                        .substring(0, 150); // Обмежуємо довжину
 
                     if (title.length > 3) {
                         events.push({
-                            title: title.substring(0, 100),
-                            date: dateStr,
+                            title,
+                            date: date.toISOString().split('T')[0],
                             type: eventType,
-                            description: ''
-                        })
+                            description: line.length > 50 ? line.substring(0, 200) : ''
+                        });
                     }
                 }
             }
         }
     }
 
-    console.log(`📊 Basic regex extracted ${events.length} events`)
-    return events
+    console.log(`📅 Regex extraction found ${events.length} events`);
+    return events;
+}
+
+// Головна функція аналізу з OpenAI
+export async function analyzeTextWithOpenAI(text: string) {
+    console.log(`🤖 Starting OpenAI analysis of ${text.length} characters`);
+
+    if (!process.env.OPENAI_API_KEY) {
+        console.warn('⚠️ OPENAI_API_KEY not configured, using regex fallback');
+        return extractDatesWithRegex(text);
+    }
+
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // ПОКРАЩЕНИЙ СИСТЕМНИЙ ПРОМПТ БЕЗ ЛІМІТІВ НА ДАТИ
+    const systemPrompt = `You are an expert at extracting ALL dates and events from academic syllabi. 
+
+CRITICAL REQUIREMENTS:
+1. Extract EVERY date mentioned in the text - do not limit to specific months or ranges
+2. Include ALL events from the entire semester/year, not just early months
+3. If no year is specified, use these rules:
+   - August-December dates: use 2024
+   - January-July dates: use 2025
+4. Extract ALL types of academic events: exams, assignments, readings, classes, deadlines, breaks, presentations, etc.
+
+You MUST return ONLY a valid JSON object with this exact format:
+{
+  "events": [
+    {
+      "title": "Event description", 
+      "date": "YYYY-MM-DD", 
+      "type": "exam|assignment|reading|class|other",
+      "description": "Additional details (optional)"
+    }
+  ]
+}
+
+IMPORTANT: Do not stop at March or any other arbitrary date. Extract ALL dates found in the text regardless of month.`;
+
+    try {
+        // Розбиваємо довгий текст на частини якщо потрібно
+        const MAX_CHUNK_SIZE = 80000; // Більший розмір для кращого контексту
+        const textChunks = [];
+
+        if (text.length > MAX_CHUNK_SIZE) {
+            console.log(`📄 Text too long (${text.length}), splitting into chunks...`);
+
+            // Розбиваємо по параграфах/рядках, щоб зберегти контекст
+            const paragraphs = text.split(/\n\s*\n/);
+            let currentChunk = '';
+
+            for (const paragraph of paragraphs) {
+                if ((currentChunk + paragraph).length > MAX_CHUNK_SIZE && currentChunk) {
+                    textChunks.push(currentChunk.trim());
+                    currentChunk = paragraph;
+                } else {
+                    currentChunk += '\n\n' + paragraph;
+                }
+            }
+
+            if (currentChunk.trim()) {
+                textChunks.push(currentChunk.trim());
+            }
+        } else {
+            textChunks.push(text);
+        }
+
+        console.log(`📄 Processing ${textChunks.length} text chunk(s)`);
+
+        const allEvents = [];
+
+        // Обробляємо кожну частину
+        for (let i = 0; i < textChunks.length; i++) {
+            const chunk = textChunks[i];
+            console.log(`🔄 Processing chunk ${i + 1}/${textChunks.length} (${chunk.length} chars)`);
+
+            const userPrompt = `Extract ALL dates and events from this syllabus text. Pay special attention to dates in ALL months, not just early months:
+
+${chunk}`;
+
+            try {
+                const response = await openai.chat.completions.create({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: 0.1,
+                    max_tokens: 3000, // Збільшуємо для більшої кількості подій
+                    response_format: { type: "json_object" }
+                });
+
+                const content = response.choices[0]?.message?.content;
+
+                if (content) {
+                    const parsedData = JSON.parse(content.trim());
+
+                    if (parsedData.events && Array.isArray(parsedData.events)) {
+                        console.log(`✅ Chunk ${i + 1} found ${parsedData.events.length} events`);
+                        allEvents.push(...parsedData.events);
+                    }
+                }
+            } catch (chunkError) {
+                console.error(`❌ Error processing chunk ${i + 1}:`, chunkError);
+            }
+
+            // Невеликий delay між запитами
+            if (i < textChunks.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // Видаляємо дублікати та сортуємо
+        const uniqueEvents = [];
+        const seen = new Set();
+
+        for (const event of allEvents) {
+            const key = `${event.date}-${event.title?.toLowerCase().substring(0, 50)}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueEvents.push(event);
+            }
+        }
+
+        // Сортуємо по датах
+        uniqueEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        console.log(`✅ OpenAI analysis complete: ${uniqueEvents.length} unique events found`);
+
+        // Логуємо діапазон дат для перевірки
+        if (uniqueEvents.length > 0) {
+            const firstDate = uniqueEvents[0].date;
+            const lastDate = uniqueEvents[uniqueEvents.length - 1].date;
+            console.log(`📅 Date range: ${firstDate} to ${lastDate}`);
+        }
+
+        return uniqueEvents;
+
+    } catch (error) {
+        console.error('❌ OpenAI analysis failed:', error);
+
+        // Fallback до regex
+        console.log('🔄 Falling back to regex extraction...');
+        const fallbackEvents = extractDatesWithRegex(text);
+
+        if (fallbackEvents.length > 0) {
+            console.log(`✅ Regex fallback found ${fallbackEvents.length} events`);
+            return fallbackEvents;
+        }
+
+        console.log('❌ Both OpenAI and regex failed, returning empty array');
+        return [];
+    }
 }

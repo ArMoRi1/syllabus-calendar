@@ -107,11 +107,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             } as APIResponse);
         }
 
-        // Обрізаємо текст якщо він занадто довгий для OpenAI
-        const MAX_TEXT_LENGTH = 100000; // 100k chars should be safe
-        if (textToAnalyze.length > MAX_TEXT_LENGTH) {
-            console.log(`⚠️ Text too long (${textToAnalyze.length}), truncating to ${MAX_TEXT_LENGTH}`);
-            textToAnalyze = textToAnalyze.substring(0, MAX_TEXT_LENGTH);
+        // НЕ обрізаємо текст - новий аналізатор обробить його по частинах
+        console.log(`📏 Full text will be processed: ${textToAnalyze.length} characters`);
+
+        // Тільки попереджуємо про дуже великі тексти
+        if (textToAnalyze.length > 500000) {
+            console.log(`⚠️ Very large text (${textToAnalyze.length} chars) - processing may take longer`);
         }
 
         console.log('🤖 Analyzing text with AI...');
