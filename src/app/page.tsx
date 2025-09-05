@@ -65,25 +65,64 @@ const getEventStyle = (type: string) => {
     }
 }
 
-// Функція експорту в Google Calendar
-const exportEventsToGoogle = (events: SyllabusEvent[]): void => {
-    if (events.length === 0) return
+// Покращена функція експорту в Google Calendar
+const exportSelectedToGoogle = (events: SyllabusEvent[], selectedIds: number[]): void => {
+    const selectedEvents = events.filter(event => selectedIds.includes(event.id))
 
-    const urls = events.map(event => {
+    if (selectedEvents.length === 0) {
+        alert('Please select at least one event to export')
+        return
+    }
+
+    // Створюємо ICS файл для масового імпорту
+    const createICSFile = (events: SyllabusEvent[]) => {
+        let icsContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Syllabus Parser//EN\r\n'
+
+        events.forEach(event => {
+            const date = new Date(event.date)
+            const dateStr = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+
+            icsContent += 'BEGIN:VEVENT\r\n'
+            icsContent += `UID:${event.id}-${Date.now()}@syllabusparser.com\r\n`
+            icsContent += `DTSTART:${dateStr}\r\n`
+            icsContent += `DTEND:${dateStr}\r\n`
+            icsContent += `SUMMARY:${event.title}\r\n`
+            icsContent += `DESCRIPTION:${event.description || ''}\r\n`
+            icsContent += 'END:VEVENT\r\n'
+        })
+
+        icsContent += 'END:VCALENDAR\r\n'
+        return icsContent
+    }
+
+    if (selectedEvents.length === 1) {
+        // Для одної події відкриваємо Google Calendar
+        const event = selectedEvents[0]
         const date = new Date(event.date)
         const dateStr = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
 
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
             `&text=${encodeURIComponent(event.title)}` +
             `&dates=${dateStr}/${dateStr}` +
             `&details=${encodeURIComponent(event.description || '')}` +
             `&location=`
-    })
 
-    window.open(urls[0], '_blank')
+        window.open(googleUrl, '_blank')
+    } else {
+        // Для кількох подій створюємо ICS файл
+        const icsContent = createICSFile(selectedEvents)
+        const blob = new Blob([icsContent], { type: 'text/calendar' })
+        const url = URL.createObjectURL(blob)
 
-    if (urls.length > 1) {
-        alert(`Opening first event. You have ${events.length} total events to add manually.`)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'syllabus-events.ics'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        alert(`Downloaded ${selectedEvents.length} events as ICS file. You can import this file into Google Calendar, Outlook, or Apple Calendar.`)
     }
 }
 
@@ -94,6 +133,8 @@ export default function HomePage() {
     const [viewMode, setViewMode] = useState<ViewMode>('list')
     const [isClient, setIsClient] = useState(false)
     const [manualText, setManualText] = useState('')
+    const [selectedEvents, setSelectedEvents] = useState<number[]>([])
+    const [selectAll, setSelectAll] = useState(false)
 
     useEffect(() => {
         setIsClient(true)
@@ -110,10 +151,14 @@ export default function HomePage() {
             const result: ProcessingResult = await response.json()
 
             if (result.success && result.events) {
-                setEvents(result.events.map((event, index) => ({
+                const processedEvents = result.events.map((event, index) => ({
                     ...event,
                     id: index + 1
-                })))
+                }))
+                setEvents(processedEvents)
+                // За замовчуванням вибираємо всі події
+                setSelectedEvents(processedEvents.map(e => e.id))
+                setSelectAll(true)
             } else {
                 alert('Error: ' + (result.error || 'Unknown error'))
             }
@@ -150,7 +195,30 @@ export default function HomePage() {
         setFile(null)
         setManualText('')
         setEvents([])
+        setSelectedEvents([])
+        setSelectAll(false)
         setIsProcessing(false)
+    }
+
+    const toggleEventSelection = (eventId: number) => {
+        setSelectedEvents(prev => {
+            const newSelection = prev.includes(eventId)
+                ? prev.filter(id => id !== eventId)
+                : [...prev, eventId]
+
+            setSelectAll(newSelection.length === events.length)
+            return newSelection
+        })
+    }
+
+    const toggleSelectAll = () => {
+        if (selectAll) {
+            setSelectedEvents([])
+            setSelectAll(false)
+        } else {
+            setSelectedEvents(events.map(e => e.id))
+            setSelectAll(true)
+        }
     }
 
     return (
@@ -179,7 +247,7 @@ export default function HomePage() {
                 {/* Main Content with soft styling */}
                 {!events.length ? (
                     /* Upload Section */
-                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
                         {/* Header with subtle gradient */}
                         <div className="px-8 py-8 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
                             <h2 className="text-3xl font-light text-gray-900 mb-2">Upload Syllabus</h2>
@@ -341,23 +409,24 @@ export default function HomePage() {
                     </div>
                 ) : (
                     /* Results Section with elegant design */
-                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-                        {/* Header */}
+                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
+                        {/* Header with selection controls */}
                         <div className="px-10 py-8 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h2 className="text-3xl font-light text-gray-900 mb-2">Parsed Events</h2>
                                     <p className="text-gray-600 text-lg">
-                                        Found {events.length} events in your syllabus
+                                        Found {events.length} events • {selectedEvents.length} selected
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <button
-                                        onClick={() => exportEventsToGoogle(events)}
-                                        className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                        onClick={() => exportSelectedToGoogle(events, selectedEvents)}
+                                        disabled={selectedEvents.length === 0}
+                                        className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                                     >
                                         <Calendar className="h-5 w-5" />
-                                        Export to Google
+                                        Export Selected ({selectedEvents.length})
                                     </button>
                                     <button
                                         onClick={resetForm}
@@ -367,19 +436,57 @@ export default function HomePage() {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Select All Controls */}
+                            <div className="mt-6 flex items-center gap-3 pt-4 border-t border-gray-100">
+                                <button
+                                    onClick={toggleSelectAll}
+                                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    <div className={`w-5 h-5 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
+                                        {selectAll && (
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    {selectAll ? 'Deselect All' : 'Select All'}
+                                </button>
+                                <span className="text-sm text-gray-500">
+                                    {selectedEvents.length === 1 ? '1 event selected' : `${selectedEvents.length} events selected`}
+                                </span>
+                            </div>
                         </div>
 
-                        {/* Events List with beautiful styling */}
+                        {/* Events List with beautiful styling and checkboxes */}
                         <div className="p-10">
                             <div className="space-y-6">
                                 {events.map(event => {
                                     const style = getEventStyle(event.type)
+                                    const isSelected = selectedEvents.includes(event.id)
                                     return (
                                         <div
                                             key={event.id}
-                                            className={`border-l-4 ${style.color} p-8 rounded-r-2xl transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-1`}
+                                            className={`border-l-4 ${style.color} p-8 rounded-r-2xl transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-1 ${
+                                                isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
+                                            }`}
                                         >
-                                            <div className="flex items-start justify-between">
+                                            <div className="flex items-start gap-4">
+                                                {/* Checkbox */}
+                                                <button
+                                                    onClick={() => toggleEventSelection(event.id)}
+                                                    className="flex-shrink-0 mt-1"
+                                                >
+                                                    <div className={`w-6 h-6 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
+                                                        {isSelected && (
+                                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </button>
+
+                                                {/* Event Content */}
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-4 mb-3">
                                                         <span className="text-2xl">{style.icon}</span>
@@ -401,7 +508,9 @@ export default function HomePage() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg`}>
+
+                                                {/* Badge */}
+                                                <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
                                                     {event.type}
                                                 </span>
                                             </div>
