@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { Upload, Calendar, List, FileText, CheckCircle, ArrowRight } from 'lucide-react'
 
 // Типи
-interface SyllabusEvent {
+interface ScheduleEvent {
     id: number
     title: string
     date: string
-    type: 'exam' | 'assignment' | 'reading' | 'class' | 'other'
+    type: 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other'
     description?: string
 }
 
@@ -16,7 +16,7 @@ type ViewMode = 'calendar' | 'list'
 
 interface ProcessingResult {
     success: boolean
-    events?: SyllabusEvent[]
+    events?: ScheduleEvent[]
     error?: string
     debug?: {
         textLength?: number
@@ -27,39 +27,53 @@ interface ProcessingResult {
 // Функція для стилізації подій
 const getEventStyle = (type: string) => {
     switch (type.toLowerCase()) {
-        case 'exam':
-            return {
-                color: 'border-l-rose-400 bg-rose-50/80 border-rose-100/50',
-                badge: 'bg-rose-500/90',
-                icon: '📝',
-                textColor: 'text-rose-700'
-            }
-        case 'assignment':
-            return {
-                color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
-                badge: 'bg-amber-500/90',
-                icon: '✍️',
-                textColor: 'text-amber-700'
-            }
-        case 'reading':
-            return {
-                color: 'border-l-emerald-400 bg-emerald-50/80 border-emerald-100/50',
-                badge: 'bg-emerald-500/90',
-                icon: '📚',
-                textColor: 'text-emerald-700'
-            }
-        case 'class':
+        case 'meeting':
             return {
                 color: 'border-l-blue-400 bg-blue-50/80 border-blue-100/50',
                 badge: 'bg-blue-500/90',
-                icon: '🏛️',
+                icon: '👥',
                 textColor: 'text-blue-700'
+            }
+        case 'deadline':
+            return {
+                color: 'border-l-red-400 bg-red-50/80 border-red-100/50',
+                badge: 'bg-red-500/90',
+                icon: '⏰',
+                textColor: 'text-red-700'
+            }
+        case 'event':
+            return {
+                color: 'border-l-purple-400 bg-purple-50/80 border-purple-100/50',
+                badge: 'bg-purple-500/90',
+                icon: '🎉',
+                textColor: 'text-purple-700'
+            }
+        case 'appointment':
+            return {
+                color: 'border-l-green-400 bg-green-50/80 border-green-100/50',
+                badge: 'bg-green-500/90',
+                icon: '📅',
+                textColor: 'text-green-700'
+            }
+        case 'task':
+            return {
+                color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
+                badge: 'bg-amber-500/90',
+                icon: '✅',
+                textColor: 'text-amber-700'
+            }
+        case 'legal':
+            return {
+                color: 'border-l-indigo-400 bg-indigo-50/80 border-indigo-100/50',
+                badge: 'bg-indigo-500/90',
+                icon: '⚖️',
+                textColor: 'text-indigo-700'
             }
         default:
             return {
                 color: 'border-l-slate-400 bg-slate-50/80 border-slate-100/50',
                 badge: 'bg-slate-500/90',
-                icon: '📅',
+                icon: '📋',
                 textColor: 'text-slate-700'
             }
     }
@@ -68,7 +82,7 @@ const getEventStyle = (type: string) => {
 export default function HomePage() {
     const [file, setFile] = useState<File | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [events, setEvents] = useState<SyllabusEvent[]>([])
+    const [events, setEvents] = useState<ScheduleEvent[]>([])
     const [viewMode, setViewMode] = useState<ViewMode>('list')
     const [isClient, setIsClient] = useState(false)
     const [manualText, setManualText] = useState('')
@@ -81,7 +95,7 @@ export default function HomePage() {
     }, [])
 
     // Функція для експорту однієї події в Google Calendar
-    const exportSingleEvent = (event: SyllabusEvent) => {
+    const exportSingleEvent = (event: ScheduleEvent) => {
         const date = new Date(event.date)
         const dateStr = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
 
@@ -95,15 +109,15 @@ export default function HomePage() {
     }
 
     // Функція для створення ICS файлу
-    const createICSFile = (events: SyllabusEvent[]) => {
-        let icsContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Syllabus Parser//EN\r\nCALSCALE:GREGORIAN\r\n'
+    const createICSFile = (events: ScheduleEvent[]) => {
+        let icsContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Schedule Parser//EN\r\nCALSCALE:GREGORIAN\r\n'
 
         events.forEach(event => {
             const date = new Date(event.date)
             const dateStr = date.toISOString().split('T')[0].replace(/-/g, '')
 
             icsContent += 'BEGIN:VEVENT\r\n'
-            icsContent += `UID:${event.id}-${Date.now()}@syllabusparser.com\r\n`
+            icsContent += `UID:${event.id}-${Date.now()}@scheduleparser.com\r\n`
             icsContent += `DTSTART;VALUE=DATE:${dateStr}\r\n`
             icsContent += `DTEND;VALUE=DATE:${dateStr}\r\n`
             icsContent += `SUMMARY:${event.title.replace(/[,;\\]/g, '\\$&')}\r\n`
@@ -126,7 +140,7 @@ export default function HomePage() {
 
         const link = document.createElement('a')
         link.href = url
-        link.download = 'syllabus-events.ics'
+        link.download = 'schedule-events.ics'
         link.style.display = 'none'
         document.body.appendChild(link)
         link.click()
@@ -135,7 +149,7 @@ export default function HomePage() {
 
         setTimeout(() => {
             alert(
-                `📅 Downloaded ${eventCount} events as "syllabus-events.ics"\n\n` +
+                `📅 Downloaded ${eventCount} events as "schedule-events.ics"\n\n` +
                 `To add to your calendar:\n` +
                 `• Google Calendar: Go to Settings > Import & Export > Import\n` +
                 `• Outlook: File > Open & Export > Import/Export\n` +
@@ -251,6 +265,38 @@ export default function HomePage() {
         }
     }
 
+    // Додаємо демонстраційні події для тестування
+    const sampleEvents: ScheduleEvent[] = [
+        {
+            id: 1,
+            title: "Team Meeting",
+            date: "2025-09-10",
+            type: "meeting",
+            description: "Weekly team sync to discuss project progress and upcoming deliverables"
+        },
+        {
+            id: 2,
+            title: "Project Deadline",
+            date: "2025-09-15",
+            type: "deadline",
+            description: "Final submission for the Q3 marketing campaign"
+        },
+        {
+            id: 3,
+            title: "Client Presentation",
+            date: "2025-09-20",
+            type: "appointment",
+            description: "Presenting the new product features to key stakeholders"
+        }
+    ]
+
+    const loadSampleData = () => {
+        setEvents(sampleEvents)
+        setSelectedEvents([])
+        setSelectAll(false)
+        setIsSelectionMode(false)
+    }
+
     return (
         <div className="min-h-screen text-white relative" style={{backgroundColor: '#161513'}}>
             {/* Background patterns */}
@@ -265,12 +311,12 @@ export default function HomePage() {
                             <Calendar className="h-10 w-10 text-white" />
                         </div>
                         <h1 className="text-6xl font-light tracking-tight text-white">
-                            Syllabus Parser
+                            Schedule Parser
                         </h1>
                     </div>
                     <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
-                        Transform your course syllabus into an organized calendar.
-                        Extract all important dates with AI-powered parsing.
+                        Extract events and dates from any document or schedule.
+                        AI-powered parsing for meetings, deadlines, and important dates.
                     </p>
                 </div>
 
@@ -280,8 +326,8 @@ export default function HomePage() {
                     <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
                         {/* Header */}
                         <div className="px-8 py-8 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
-                            <h2 className="text-3xl font-light text-gray-900 mb-2">Upload Syllabus</h2>
-                            <p className="text-gray-600 text-lg">Choose your preferred input method</p>
+                            <h2 className="text-3xl font-light text-gray-900 mb-2">Upload Document</h2>
+                            <p className="text-gray-600 text-lg">Extract events from any schedule or document</p>
                         </div>
 
                         <div className="p-10">
@@ -294,7 +340,7 @@ export default function HomePage() {
                                     <div>
                                         <h3 className="text-2xl font-medium text-gray-900 mb-3">PDF Upload</h3>
                                         <p className="text-gray-600 text-base leading-relaxed">
-                                            Recommended method for best accuracy and automatic text extraction
+                                            Upload any document with dates and events for automatic extraction
                                         </p>
                                     </div>
                                 </div>
@@ -317,7 +363,7 @@ export default function HomePage() {
                                             Choose PDF file
                                         </span>
                                         <span className="block text-sm text-gray-500">
-                                            Supports files up to 50MB • Best with text-based PDFs
+                                            Supports files up to 50MB • Works with schedules, contracts, timelines
                                         </span>
                                     </div>
                                 </label>
@@ -375,14 +421,14 @@ export default function HomePage() {
                                     <div>
                                         <h3 className="text-2xl font-medium text-gray-900 mb-3">Manual Text</h3>
                                         <p className="text-gray-600 text-base leading-relaxed">
-                                            Copy and paste syllabus content directly as a backup option
+                                            Copy and paste any text with dates and events for processing
                                         </p>
                                     </div>
                                 </div>
 
                                 <textarea
                                     className="w-full h-40 p-6 border border-gray-200 rounded-2xl resize-none text-base focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
-                                    placeholder="Paste your syllabus text here..."
+                                    placeholder="Paste any document text with dates and events here..."
                                     value={manualText}
                                     onChange={(e) => setManualText(e.target.value)}
                                 />
@@ -423,17 +469,33 @@ export default function HomePage() {
                                 <ul className="space-y-3 text-base text-gray-700">
                                     <li className="flex items-center gap-3">
                                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        Use text-based PDFs (not scanned images)
+                                        Use text-based documents (not scanned images)
                                     </li>
                                     <li className="flex items-center gap-3">
                                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        Ensure dates and assignments are clearly visible
+                                        Works with schedules, contracts, timelines, agendas
                                     </li>
                                     <li className="flex items-center gap-3">
                                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                                         Files under 10MB process faster and more reliably
                                     </li>
                                 </ul>
+                            </div>
+
+                            {/* Demo Button */}
+                            <div className="mt-6 pt-6 border-t border-gray-100">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-medium text-gray-900 mb-2">Try the demo</h4>
+                                        <p className="text-sm text-gray-600">Load sample events to see how the interface works</p>
+                                    </div>
+                                    <button
+                                        onClick={loadSampleData}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
+                                    >
+                                        Load Sample Events
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

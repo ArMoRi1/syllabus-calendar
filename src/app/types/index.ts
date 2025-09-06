@@ -1,6 +1,6 @@
 // types/index.ts
 
-export interface SyllabusEvent {
+export interface ScheduleEvent {
     id: number
     title: string
     date: string
@@ -8,7 +8,7 @@ export interface SyllabusEvent {
     description?: string
 }
 
-export type EventType = 'exam' | 'assignment' | 'reading' | 'class' | 'other'
+export type EventType = 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other'
 
 export type ViewMode = 'calendar' | 'list'
 
@@ -16,11 +16,12 @@ export interface EventStyle {
     color: string
     badge: string
     icon: string
+    textColor: string
 }
 
 export interface ProcessingResult {
     success: boolean
-    events?: SyllabusEvent[]
+    events?: ScheduleEvent[]
     error?: string
     debug?: {
         textLength?: number
@@ -37,3 +38,42 @@ export interface ExtractionMethod {
     name: string
     method: () => Promise<string>
 }
+
+// Категории событий с описаниями
+export const EVENT_CATEGORIES = {
+    meeting: {
+        label: 'Meeting',
+        description: 'Meetings, calls, conferences, discussions',
+        keywords: ['meeting', 'call', 'conference', 'discussion', 'interview', 'consultation', 'sync', 'standup']
+    },
+    deadline: {
+        label: 'Deadline',
+        description: 'Due dates, submission deadlines, expiration dates',
+        keywords: ['deadline', 'due', 'submit', 'submission', 'final', 'expires', 'last day', 'cutoff']
+    },
+    event: {
+        label: 'Event',
+        description: 'Workshops, seminars, presentations, celebrations',
+        keywords: ['event', 'workshop', 'seminar', 'presentation', 'webinar', 'training', 'launch', 'party']
+    },
+    appointment: {
+        label: 'Appointment',
+        description: 'Scheduled visits, bookings, reservations',
+        keywords: ['appointment', 'visit', 'checkup', 'scheduled', 'booking', 'reservation', 'slot']
+    },
+    task: {
+        label: 'Task',
+        description: 'Work tasks, projects, milestones, action items',
+        keywords: ['task', 'action', 'todo', 'work', 'project', 'milestone', 'job', 'activity']
+    },
+    legal: {
+        label: 'Legal',
+        description: 'Court dates, hearings, filings, legal deadlines',
+        keywords: ['hearing', 'court', 'trial', 'deposition', 'filing', 'motion', 'brief', 'case', 'contract']
+    },
+    other: {
+        label: 'Other',
+        description: 'General reminders and miscellaneous events',
+        keywords: ['reminder', 'note', 'follow-up', 'check', 'update', 'report', 'analysis']
+    }
+} as const;
