@@ -636,7 +636,14 @@ export default function HomePage() {
                                                 </div>
 
                                                 {/* Right side */}
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex flex-col items-end gap-6">
+                                                    <div>
+                                                        {/* Badge */}
+                                                        <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
+                                                            {event.type}
+                                                        </span>
+                                                    </div>
+
                                                     {/* Add to Google кнопка тільки НЕ в режимі вибору */}
                                                     {!isSelectionMode && (
                                                         <button
@@ -649,10 +656,7 @@ export default function HomePage() {
                                                         </button>
                                                     )}
 
-                                                    {/* Badge */}
-                                                    <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
-                                                        {event.type}
-                                                    </span>
+
                                                 </div>
                                             </div>
                                         </div>
