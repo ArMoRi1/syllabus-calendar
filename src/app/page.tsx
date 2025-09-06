@@ -300,19 +300,19 @@ export default function HomePage() {
     }
 
     return (
-        <div className="min-h-screen text-white relative" style={{backgroundColor: '#161513'}}>
+        <div className="h-screen text-white relative overflow-hidden" style={{backgroundColor: '#161513'}}>
             {/* Background patterns */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,_rgba(120,119,198,0.1)_0%,_transparent_50%)]"></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.05)_0%,_transparent_50%)]"></div>
 
-            <div className="relative max-w-6xl mx-auto px-6 py-16">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10">
-                            <Calendar className="h-6 w-6 text-white" />
+            <div className="relative h-full flex flex-col max-w-6xl mx-auto px-6">
+                {/* Compact Header */}
+                <div className="text-center py-6 flex-shrink-0">
+                    <div className="inline-flex items-center gap-3 mb-2">
+                        <div className="p-1.5 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10">
+                            <Calendar className="h-5 w-5 text-white" />
                         </div>
-                        <h1 className="text-3xl font-light tracking-tight text-white">
+                        <h1 className="text-2xl font-light tracking-tight text-white">
                             Schedule Parser
                         </h1>
                     </div>
@@ -321,367 +321,369 @@ export default function HomePage() {
                     </p>
                 </div>
 
-                {/* Main Content */}
-                {!events.length ? (
-                    /* Upload Section */
-                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
-                        {/* Header with Toggle */}
-                        <div className="px-8 py-6 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h2 className="text-2xl font-light text-gray-900 mb-1">Upload Document</h2>
-                                    <p className="text-gray-600">Extract events from any schedule or document</p>
-                                </div>
-
-                                {/* Method Toggle */}
-                                <div className="flex items-center bg-gray-100 rounded-xl p-1">
-                                    <button
-                                        onClick={() => setInputMethod('file')}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                            inputMethod === 'file'
-                                                ? 'bg-white shadow text-gray-900'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        <FileText className="h-4 w-4 inline mr-2" />
-                                        PDF File
-                                    </button>
-                                    <button
-                                        onClick={() => setInputMethod('text')}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                            inputMethod === 'text'
-                                                ? 'bg-white shadow text-gray-900'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        <FileText className="h-4 w-4 inline mr-2" />
-                                        Manual Text
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-8">
-                            {inputMethod === 'file' ? (
-                                /* PDF Upload */
-                                <div>
-                                    <div className="flex items-start gap-4 mb-6">
-                                        <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100/50">
-                                            <FileText className="h-6 w-6 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-medium text-gray-900 mb-2">Upload PDF Document</h3>
-                                            <p className="text-gray-600 text-sm leading-relaxed">
-                                                Upload any document with dates and events for automatic extraction
-                                            </p>
-                                        </div>
+                {/* Main Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                    {!events.length ? (
+                        /* Upload Section */
+                        <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
+                            {/* Compact Header with Toggle */}
+                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h2 className="text-xl font-light text-gray-900 mb-1">Upload Document</h2>
+                                        <p className="text-sm text-gray-600">Extract events from any schedule or document</p>
                                     </div>
 
-                                    <input
-                                        type="file"
-                                        accept=".pdf"
-                                        onChange={handleFileUpload}
-                                        className="hidden"
-                                        id="file-upload"
-                                    />
-
-                                    <label
-                                        htmlFor="file-upload"
-                                        className="group relative block w-full p-8 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
-                                    >
-                                        <div className="text-center">
-                                            <Upload className="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 mb-4 transition-colors" />
-                                            <span className="block text-lg font-medium text-gray-900 mb-2">
-                                                Choose PDF file
-                                            </span>
-                                            <span className="block text-sm text-gray-500">
-                                                Supports files up to 50MB • Works with schedules, contracts, timelines
-                                            </span>
-                                        </div>
-                                    </label>
-
-                                    {file && (
-                                        <div className="mt-4 p-4 bg-emerald-50/80 border border-emerald-200/50 rounded-xl">
-                                            <div className="flex items-center gap-3">
-                                                <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-medium text-emerald-900">
-                                                        {file.name}
-                                                    </p>
-                                                    <p className="text-xs text-emerald-700 mt-1">
-                                                        {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={processFile}
-                                                    disabled={isProcessing}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow hover:shadow-lg"
-                                                >
-                                                    {isProcessing ? (
-                                                        <>
-                                                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                                                            Processing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            Parse PDF
-                                                            <ArrowRight className="h-4 w-4" />
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                /* Manual Text */
-                                <div>
-                                    <div className="flex items-start gap-4 mb-6">
-                                        <div className="flex-shrink-0 w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100/50">
-                                            <FileText className="h-6 w-6 text-gray-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-medium text-gray-900 mb-2">Paste Text Content</h3>
-                                            <p className="text-gray-600 text-sm leading-relaxed">
-                                                Copy and paste any text with dates and events for processing
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <textarea
-                                        className="w-full h-32 p-4 border border-gray-200 rounded-xl resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
-                                        placeholder="Paste any document text with dates and events here..."
-                                        value={manualText}
-                                        onChange={(e) => setManualText(e.target.value)}
-                                    />
-
-                                    {manualText.length > 20 && (
-                                        <div className="mt-4">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-gray-600">
-                                                    {manualText.length} characters ready to process
-                                                </span>
-                                                <button
-                                                    onClick={processManualText}
-                                                    disabled={isProcessing}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow hover:shadow-lg"
-                                                >
-                                                    {isProcessing ? (
-                                                        <>
-                                                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                                                            Processing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            Parse Text
-                                                            <ArrowRight className="h-4 w-4" />
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Tips and Demo */}
-                            <div className="mt-8 pt-6 border-t border-gray-100">
-                                <div className="flex items-start justify-between gap-6">
-                                    {/* Tips */}
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best results</h4>
-                                        <ul className="space-y-2 text-sm text-gray-700">
-                                            <li className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                                                Use text-based documents (not scanned images)
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                                                Works with schedules, contracts, timelines, agendas
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                                                Files under 10MB process faster and more reliably
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    {/* Demo Button */}
-                                    <div className="flex-shrink-0">
+                                    {/* Method Toggle */}
+                                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                         <button
-                                            onClick={loadSampleData}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
-                                        >
-                                            Try Demo
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* Results Section - залишаємо без змін */
-                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
-                        {/* Header */}
-                        <div className="px-10 py-8 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-3xl font-light text-gray-900 mb-2">Parsed Events</h2>
-                                    <p className="text-gray-600 text-lg mb-1">
-                                        Found {events.length} events
-                                        {isSelectionMode && ` • ${selectedEvents.length} selected`}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {isSelectionMode
-                                            ? "Select events for batch export or individual Google Calendar links"
-                                            : "Click 'Add to Google' for individual events or 'Select Multiple' for batch export"
-                                        }
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    {isSelectionMode ? (
-                                        <>
-                                            <button
-                                                onClick={exportSelectedToGoogle}
-                                                disabled={selectedEvents.length === 0}
-                                                className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white text-base font-medium rounded-xl hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-                                                title={selectedEvents.length === 1 ? "Open in Google Calendar" : "Download ICS file for import"}
-                                            >
-                                                <Calendar className="h-5 w-5" />
-                                                {selectedEvents.length === 1
-                                                    ? 'Add to Google Calendar'
-                                                    : selectedEvents.length === 0
-                                                        ? 'Select Events to Export'
-                                                        : `Export ${selectedEvents.length} Events`
-                                                }
-                                            </button>
-                                            <button
-                                                onClick={toggleSelectionMode}
-                                                className="inline-flex items-center gap-3 px-6 py-3 border border-gray-300 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-50 transition-all duration-200"
-                                            >
-                                                Cancel Selection
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            onClick={toggleSelectionMode}
-                                            className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 text-white text-base font-medium rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                                        >
-                                            Select Multiple
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={resetForm}
-                                        className="inline-flex items-center gap-3 px-6 py-3 border border-gray-200 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-50 transition-all duration-200"
-                                    >
-                                        Parse Another
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Select All Controls */}
-                            {isSelectionMode && (
-                                <div className="mt-6 flex items-center gap-3 pt-4 border-t border-gray-100">
-                                    <button
-                                        onClick={toggleSelectAll}
-                                        className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                    >
-                                        <div className={`w-5 h-5 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
-                                            {selectAll && (
-                                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                        {selectAll ? 'Deselect All' : 'Select All'}
-                                    </button>
-                                    <span className="text-sm text-gray-500">
-                                        {selectedEvents.length === 1 ? '1 event selected' : `${selectedEvents.length} events selected`}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Events List */}
-                        <div className="p-10">
-                            <div className="space-y-6">
-                                {events.map(event => {
-                                    const style = getEventStyle(event.type)
-                                    const isSelected = selectedEvents.includes(event.id)
-                                    return (
-                                        <div
-                                            key={event.id}
-                                            className={`border-l-4 ${style.color} p-8 rounded-r-2xl transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-1 ${
-                                                isSelectionMode && isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
+                                            onClick={() => setInputMethod('file')}
+                                            className={`px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 ${
+                                                inputMethod === 'file'
+                                                    ? 'bg-white shadow text-gray-900'
+                                                    : 'text-gray-600 hover:text-gray-900'
                                             }`}
                                         >
-                                            <div className="flex items-start gap-4">
-                                                {/* Checkbox - тільки в режимі вибору */}
-                                                {isSelectionMode && (
-                                                    <button
-                                                        onClick={() => toggleEventSelection(event.id)}
-                                                        className="flex-shrink-0 mt-1"
-                                                    >
-                                                        <div className={`w-6 h-6 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
-                                                            {isSelected && (
-                                                                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                                </svg>
-                                                            )}
-                                                        </div>
-                                                    </button>
-                                                )}
+                                            <FileText className="h-3 w-3 inline mr-1" />
+                                            PDF File
+                                        </button>
+                                        <button
+                                            onClick={() => setInputMethod('text')}
+                                            className={`px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 ${
+                                                inputMethod === 'text'
+                                                    ? 'bg-white shadow text-gray-900'
+                                                    : 'text-gray-600 hover:text-gray-900'
+                                            }`}
+                                        >
+                                            <FileText className="h-3 w-3 inline mr-1" />
+                                            Manual Text
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                                                {/* Event Content */}
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-4 mb-3">
-                                                        <span className="text-2xl">{style.icon}</span>
-                                                        <h3 className="text-xl font-medium text-gray-900 leading-relaxed">
-                                                            {event.title}
-                                                        </h3>
-                                                    </div>
-                                                    <p className={`text-base font-medium mb-4 ${style.textColor}`} suppressHydrationWarning>
-                                                        {isClient && new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
-                                                            weekday: 'long',
-                                                            year: 'numeric',
-                                                            month: 'long',
-                                                            day: 'numeric',
-                                                        })}
-                                                    </p>
-                                                    {event.description && (
-                                                        <p className="text-base text-gray-700 leading-relaxed">
-                                                            {event.description}
-                                                        </p>
-                                                    )}
-                                                </div>
+                            <div className="p-6">
+                                {inputMethod === 'file' ? (
+                                    /* PDF Upload */
+                                    <div>
+                                        <div className="flex items-start gap-3 mb-4">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100/50">
+                                                <FileText className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Upload PDF Document</h3>
+                                                <p className="text-gray-600 text-sm leading-relaxed">
+                                                    Upload any document with dates and events for automatic extraction
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                                {/* Right side */}
+                                        <input
+                                            type="file"
+                                            accept=".pdf"
+                                            onChange={handleFileUpload}
+                                            className="hidden"
+                                            id="file-upload"
+                                        />
+
+                                        <label
+                                            htmlFor="file-upload"
+                                            className="group relative block w-full p-12 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                        >
+                                            <div className="text-center">
+                                                <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
+                                                <span className="block text-base font-medium text-gray-900 mb-1">
+                                                    Choose PDF file
+                                                </span>
+                                                <span className="block text-sm text-gray-500">
+                                                    Up to 50MB • Works with schedules, contracts, timelines
+                                                </span>
+                                            </div>
+                                        </label>
+
+                                        {file && (
+                                            <div className="mt-3 p-3 bg-emerald-50/80 border border-emerald-200/50 rounded-lg">
                                                 <div className="flex items-center gap-3">
-                                                    {/* Add to Google кнопка тільки НЕ в режимі вибору */}
-                                                    {!isSelectionMode && (
+                                                    <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-emerald-900">
+                                                            {file.name}
+                                                        </p>
+                                                        <p className="text-xs text-emerald-700">
+                                                            {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={processFile}
+                                                        disabled={isProcessing}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                                    >
+                                                        {isProcessing ? (
+                                                            <>
+                                                                <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                                Processing...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                Parse PDF
+                                                                <ArrowRight className="h-3 w-3" />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    /* Manual Text */
+                                    <div>
+                                        <div className="flex items-start gap-3 mb-4">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100/50">
+                                                <FileText className="h-5 w-5 text-gray-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Paste Text Content</h3>
+                                                <p className="text-gray-600 text-sm leading-relaxed">
+                                                    Copy and paste any text with dates and events for processing
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <textarea
+                                            className="w-full h-24 p-3 border border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                                            placeholder="Paste any document text with dates and events here..."
+                                            value={manualText}
+                                            onChange={(e) => setManualText(e.target.value)}
+                                        />
+
+                                        {manualText.length > 20 && (
+                                            <div className="mt-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-gray-600">
+                                                        {manualText.length} characters ready
+                                                    </span>
+                                                    <button
+                                                        onClick={processManualText}
+                                                        disabled={isProcessing}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                                    >
+                                                        {isProcessing ? (
+                                                            <>
+                                                                <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                                Processing...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                Parse Text
+                                                                <ArrowRight className="h-3 w-3" />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Tips and Demo */}
+                                <div className="mt-8 pt-6 border-t border-gray-100">
+                                    <div className="flex items-start justify-between gap-6">
+                                        {/* Tips */}
+                                        <div className="flex-1">
+                                            <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best results</h4>
+                                            <ul className="space-y-2 text-sm text-gray-700">
+                                                <li className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                    Use text-based documents (not scanned images)
+                                                </li>
+                                                <li className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                    Works with schedules, contracts, timelines, agendas
+                                                </li>
+                                                <li className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                    Files under 10MB process faster and more reliably
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        {/* Demo Button */}
+                                        <div className="flex-shrink-0">
+                                            <button
+                                                onClick={loadSampleData}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
+                                            >
+                                                Try Demo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Results Section */
+                        <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden mb-6">
+                            {/* Header */}
+                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-light text-gray-900 mb-1">Parsed Events</h2>
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Found {events.length} events
+                                            {isSelectionMode && ` • ${selectedEvents.length} selected`}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {isSelectionMode
+                                                ? "Select events for batch export or individual Google Calendar links"
+                                                : "Click 'Add to Google' for individual events or 'Select Multiple' for batch export"
+                                            }
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {isSelectionMode ? (
+                                            <>
+                                                <button
+                                                    onClick={exportSelectedToGoogle}
+                                                    disabled={selectedEvents.length === 0}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                                    title={selectedEvents.length === 1 ? "Open in Google Calendar" : "Download ICS file for import"}
+                                                >
+                                                    <Calendar className="h-4 w-4" />
+                                                    {selectedEvents.length === 1
+                                                        ? 'Add to Google Calendar'
+                                                        : selectedEvents.length === 0
+                                                            ? 'Select Events to Export'
+                                                            : `Export ${selectedEvents.length} Events`
+                                                    }
+                                                </button>
+                                                <button
+                                                    onClick={toggleSelectionMode}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+                                                >
+                                                    Cancel Selection
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={toggleSelectionMode}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200"
+                                            >
+                                                Select Multiple
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={resetForm}
+                                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+                                        >
+                                            Parse Another
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Select All Controls */}
+                                {isSelectionMode && (
+                                    <div className="mt-3 flex items-center gap-3 pt-3 border-t border-gray-100">
+                                        <button
+                                            onClick={toggleSelectAll}
+                                            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                        >
+                                            <div className={`w-4 h-4 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
+                                                {selectAll && (
+                                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            {selectAll ? 'Deselect All' : 'Select All'}
+                                        </button>
+                                        <span className="text-xs text-gray-500">
+                                            {selectedEvents.length === 1 ? '1 event selected' : `${selectedEvents.length} events selected`}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Events List */}
+                            <div className="p-6">
+                                <div className="space-y-4">
+                                    {events.map(event => {
+                                        const style = getEventStyle(event.type)
+                                        const isSelected = selectedEvents.includes(event.id)
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className={`border-l-4 ${style.color} p-4 rounded-r-xl transition-all duration-300 hover:shadow-md hover:shadow-gray-200/50 hover:-translate-y-0.5 ${
+                                                    isSelectionMode && isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
+                                                }`}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    {/* Checkbox - тільки в режимі вибору */}
+                                                    {isSelectionMode && (
                                                         <button
-                                                            onClick={() => exportSingleEvent(event)}
-                                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
-                                                            title="Add this event to Google Calendar"
+                                                            onClick={() => toggleEventSelection(event.id)}
+                                                            className="flex-shrink-0 mt-0.5"
                                                         >
-                                                            <Calendar className="h-4 w-4" />
-                                                            Add to Google
+                                                            <div className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
+                                                                {isSelected && (
+                                                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
                                                         </button>
                                                     )}
 
-                                                    {/* Badge */}
-                                                    <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
-                                                        {event.type}
-                                                    </span>
+                                                    {/* Event Content */}
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <span className="text-lg">{style.icon}</span>
+                                                            <h3 className="text-base font-medium text-gray-900 leading-relaxed">
+                                                                {event.title}
+                                                            </h3>
+                                                        </div>
+                                                        <p className={`text-sm font-medium mb-2 ${style.textColor}`} suppressHydrationWarning>
+                                                            {isClient && new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
+                                                                weekday: 'long',
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric',
+                                                            })}
+                                                        </p>
+                                                        {event.description && (
+                                                            <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                                                                {event.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Right side */}
+                                                    <div className="flex items-center gap-2">
+                                                        {/* Add to Google кнопка тільки НЕ в режимі вибору */}
+                                                        {!isSelectionMode && (
+                                                            <button
+                                                                onClick={() => exportSingleEvent(event)}
+                                                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1.5"
+                                                                title="Add this event to Google Calendar"
+                                                            >
+                                                                <Calendar className="h-3 w-3" />
+                                                                Add to Google
+                                                            </button>
+                                                        )}
+
+                                                        {/* Badge */}
+                                                        <span className={`px-2 py-1 ${style.badge} text-white text-xs font-medium rounded-full uppercase tracking-wide flex-shrink-0`}>
+                                                            {event.type}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )
-                                })}
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     )
