@@ -2,32 +2,36 @@
 
 import { OpenAI } from 'openai'
 
-// Покращений fallback regex екстрактор
+// Універсальний regex екстрактор для будь-яких документів
 function extractDatesWithRegex(text: string): any[] {
     console.log('🔍 Using regex fallback extraction...');
     const events = [];
     const lines = text.split(/[\n\r]+/);
 
-    // Більш широкі паттерни для дат
+    // Універсальні паттерни для дат
     const datePatterns = [
         // Повні дати з роками
         /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
         /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
-        // Дати без року (припускаємо 2024-2025 навчальний рік)
+        // Дати без року
         /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?/gi,
         /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?/gi,
         // Числові формати
         /\d{1,2}\/\d{1,2}\/\d{2,4}/g,
         /\d{4}-\d{2}-\d{2}/g,
-        /\d{1,2}\/\d{1,2}/g, // MM/DD без року
+        /\d{1,2}\.\d{1,2}\.\d{2,4}/g,
+        /\d{1,2}\/\d{1,2}/g,
     ];
 
+    // Універсальні ключові слова для типів подій
     const eventKeywords = {
-        exam: ['exam', 'test', 'quiz', 'midterm', 'final', 'assessment', 'evaluation'],
-        assignment: ['assignment', 'homework', 'hw', 'project', 'paper', 'essay', 'due', 'submit', 'submission', 'report'],
-        reading: ['reading', 'read', 'chapter', 'ch.', 'ch', 'pages', 'pp.', 'book', 'article'],
-        class: ['class', 'lecture', 'session', 'meeting', 'seminar', 'workshop', 'discussion'],
-        other: ['deadline', 'event', 'activity', 'presentation', 'conference', 'break', 'holiday', 'no class']
+        meeting: ['meeting', 'call', 'conference', 'discussion', 'interview', 'consultation', 'sync', 'standup', 'session', 'gathering', 'assembly'],
+        deadline: ['deadline', 'due', 'submit', 'submission', 'final', 'expires', 'last day', 'cutoff', 'close', 'ends', 'expiry', 'maturity'],
+        event: ['event', 'workshop', 'seminar', 'presentation', 'webinar', 'training', 'launch', 'party', 'celebration', 'ceremony', 'show', 'exhibition'],
+        appointment: ['appointment', 'visit', 'checkup', 'scheduled', 'booking', 'reservation', 'slot', 'meeting with', 'see', 'consultation'],
+        task: ['task', 'action', 'todo', 'work', 'project', 'milestone', 'job', 'activity', 'assignment', 'deliverable', 'complete', 'finish'],
+        legal: ['hearing', 'court', 'trial', 'deposition', 'filing', 'motion', 'brief', 'case', 'contract', 'litigation', 'judgment', 'appeal', 'settlement', 'arbitration', 'mediation'],
+        other: ['note', 'reminder', 'follow-up', 'check', 'update', 'report', 'analysis', 'review', 'schedule', 'plan']
     };
 
     function parseDate(dateStr: string): Date | null {
@@ -52,9 +56,9 @@ function extractDatesWithRegex(text: string): any[] {
                     const month = i;
                     const day = parseInt(dayMatch[0]);
 
-                    // Визначаємо рік: вересень-грудень = поточний рік, січень-травень = наступний рік
+                    // Визначаємо рік: вересень-грудень = поточний рік, січень-серпень = наступний рік
                     let year = currentYear;
-                    if (month >= 0 && month <= 4) { // січень-травень
+                    if (month >= 0 && month <= 7) { // січень-серпень
                         year = currentYear + 1;
                     }
 
@@ -72,7 +76,7 @@ function extractDatesWithRegex(text: string): any[] {
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (line.length < 5) continue; // Пропускаємо короткі рядки
+        if (line.length < 5) continue;
 
         for (const pattern of datePatterns) {
             const matches = Array.from(line.matchAll(pattern));
@@ -108,9 +112,9 @@ function extractDatesWithRegex(text: string): any[] {
 
                     // Очищаємо назву
                     title = title
-                        .replace(/^\W+|\W+$/g, '') // Прибираємо спеціальні символи з початку/кінця
+                        .replace(/^\W+|\W+$/g, '')
                         .replace(/\s+/g, ' ')
-                        .substring(0, 150); // Обмежуємо довжину
+                        .substring(0, 150);
 
                     if (title.length > 3) {
                         events.push({
@@ -129,7 +133,7 @@ function extractDatesWithRegex(text: string): any[] {
     return events;
 }
 
-// Головна функція аналізу з OpenAI
+// Головна функція аналізу з OpenAI - тепер універсальна
 export async function analyzeTextWithOpenAI(text: string) {
     console.log(`🤖 Starting OpenAI analysis of ${text.length} characters`);
 
@@ -142,34 +146,54 @@ export async function analyzeTextWithOpenAI(text: string) {
         apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // ПОКРАЩЕНИЙ СИСТЕМНИЙ ПРОМПТ БЕЗ ЛІМІТІВ НА ДАТИ
-    const systemPrompt = `You are an expert at extracting ALL dates and events from academic syllabi. 
+    // УНІВЕРСАЛЬНИЙ СИСТЕМНИЙ ПРОМПТ ДЛЯ БУДЬ-ЯКИХ ДОКУМЕНТІВ
+    const systemPrompt = `You are an expert at extracting ALL dates and events from any type of document - legal documents, contracts, schedules, timelines, project plans, court filings, business agreements, etc.
 
 CRITICAL REQUIREMENTS:
 1. Extract EVERY date mentioned in the text - do not limit to specific months or ranges
-2. Include ALL events from the entire semester/year, not just early months
+2. Include ALL events from the entire document, regardless of time period
 3. If no year is specified, use these rules:
-   - August-December dates: use 2024
-   - January-July dates: use 2025
-4. Extract ALL types of academic events: exams, assignments, readings, classes, deadlines, breaks, presentations, etc.
+   - September-December dates: use 2024
+   - January-August dates: use 2025
+   - For legal/business documents: infer from context or use current year
+4. Intelligently categorize events based on context
+
+EVENT TYPES TO IDENTIFY:
+- "meeting": meetings, calls, conferences, discussions, interviews, consultations, sessions
+- "deadline": deadlines, due dates, submission dates, expiration dates, cutoff dates, maturity dates
+- "event": workshops, seminars, presentations, launches, ceremonies, shows, exhibitions
+- "appointment": appointments, visits, scheduled meetings, bookings, reservations
+- "task": tasks, projects, milestones, deliverables, assignments, work items
+- "legal": hearings, court dates, trials, depositions, filings, motions, briefs, settlements, arbitrations
+- "other": general reminders, notes, updates, reviews, or unspecified events
+
+ANALYZE THE DOCUMENT STRUCTURE:
+- Identify sections, headers, or categories in the document
+- Use the document's own terminology and structure
+- Preserve the original event descriptions as much as possible
+- Extract implicit dates (e.g., "30 days from signing" if signing date is known)
 
 You MUST return ONLY a valid JSON object with this exact format:
 {
   "events": [
     {
-      "title": "Event description", 
+      "title": "Event description from the document", 
       "date": "YYYY-MM-DD", 
-      "type": "exam|assignment|reading|class|other",
-      "description": "Additional details (optional)"
+      "type": "meeting|deadline|event|appointment|task|legal|other",
+      "description": "Additional context or details (optional)"
     }
   ]
 }
 
-IMPORTANT: Do not stop at March or any other arbitrary date. Extract ALL dates found in the text regardless of month.`;
+IMPORTANT: 
+- Extract ALL dates found in the text regardless of month or year
+- Be especially careful with legal and business documents which may have critical dates
+- Include contractual obligations, payment schedules, review periods, notice requirements
+- For recurring events, create separate entries for each occurrence if dates are specified`;
 
     try {
         // Розбиваємо довгий текст на частини якщо потрібно
-        const MAX_CHUNK_SIZE = 80000; // Більший розмір для кращого контексту
+        const MAX_CHUNK_SIZE = 80000;
         const textChunks = [];
 
         if (text.length > MAX_CHUNK_SIZE) {
@@ -204,8 +228,23 @@ IMPORTANT: Do not stop at March or any other arbitrary date. Extract ALL dates f
             const chunk = textChunks[i];
             console.log(`🔄 Processing chunk ${i + 1}/${textChunks.length} (${chunk.length} chars)`);
 
-            const userPrompt = `Extract ALL dates and events from this syllabus text. Pay special attention to dates in ALL months, not just early months:
+            // Аналізуємо структуру документа для кращого контексту
+            const hasLegalTerms = /court|hearing|trial|motion|brief|contract|agreement|settlement/i.test(chunk);
+            const hasBusinessTerms = /meeting|deadline|milestone|deliverable|payment|invoice/i.test(chunk);
+            const hasAcademicTerms = /assignment|exam|quiz|lecture|reading|chapter/i.test(chunk);
 
+            let contextHint = '';
+            if (hasLegalTerms) contextHint = 'This appears to be a legal document. ';
+            else if (hasBusinessTerms) contextHint = 'This appears to be a business document. ';
+            else if (hasAcademicTerms) contextHint = 'This appears to be an academic document. ';
+
+            const userPrompt = `${contextHint}Extract ALL dates and events from this document. Pay special attention to:
+- ALL dates mentioned, regardless of month or year
+- The document's own structure and terminology
+- Any implicit dates or time periods
+- Critical deadlines or obligations
+
+Document text:
 ${chunk}`;
 
             try {
@@ -216,7 +255,7 @@ ${chunk}`;
                         { role: 'user', content: userPrompt }
                     ],
                     temperature: 0.1,
-                    max_tokens: 3000, // Збільшуємо для більшої кількості подій
+                    max_tokens: 3000,
                     response_format: { type: "json_object" }
                 });
 
@@ -227,7 +266,17 @@ ${chunk}`;
 
                     if (parsedData.events && Array.isArray(parsedData.events)) {
                         console.log(`✅ Chunk ${i + 1} found ${parsedData.events.length} events`);
-                        allEvents.push(...parsedData.events);
+
+                        // Додаємо події та намагаємось зберегти оригінальні назви
+                        parsedData.events.forEach((event: any) => {
+                            // Нормалізуємо тип події
+                            const validTypes = ['meeting', 'deadline', 'event', 'appointment', 'task', 'legal', 'other'];
+                            if (!validTypes.includes(event.type)) {
+                                event.type = 'other';
+                            }
+
+                            allEvents.push(event);
+                        });
                     }
                 }
             } catch (chunkError) {
@@ -257,11 +306,17 @@ ${chunk}`;
 
         console.log(`✅ OpenAI analysis complete: ${uniqueEvents.length} unique events found`);
 
-        // Логуємо діапазон дат для перевірки
+        // Логуємо діапазон дат та типи подій для перевірки
         if (uniqueEvents.length > 0) {
             const firstDate = uniqueEvents[0].date;
             const lastDate = uniqueEvents[uniqueEvents.length - 1].date;
             console.log(`📅 Date range: ${firstDate} to ${lastDate}`);
+
+            const typeCounts = uniqueEvents.reduce((acc, event) => {
+                acc[event.type] = (acc[event.type] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+            console.log(`📊 Event types:`, typeCounts);
         }
 
         return uniqueEvents;
