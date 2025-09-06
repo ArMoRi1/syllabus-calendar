@@ -13,6 +13,7 @@ interface ScheduleEvent {
 }
 
 type ViewMode = 'calendar' | 'list'
+type InputMethod = 'file' | 'text'
 
 interface ProcessingResult {
     success: boolean
@@ -89,6 +90,7 @@ export default function HomePage() {
     const [selectedEvents, setSelectedEvents] = useState<number[]>([])
     const [selectAll, setSelectAll] = useState(false)
     const [isSelectionMode, setIsSelectionMode] = useState(false)
+    const [inputMethod, setInputMethod] = useState<InputMethod>('file')
 
     useEffect(() => {
         setIsClient(true)
@@ -303,9 +305,9 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,_rgba(120,119,198,0.1)_0%,_transparent_50%)]"></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.05)_0%,_transparent_50%)]"></div>
 
-            <div className="relative max-w-5xl mx-auto px-6 py-16">
+            <div className="relative max-w-6xl mx-auto px-6 py-16">
                 {/* Header */}
-                <div className="text-center mb-20">
+                <div className="text-center mb-16">
                     <div className="inline-flex items-center gap-4 mb-8">
                         <div className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10">
                             <Calendar className="h-10 w-10 text-white" />
@@ -323,184 +325,203 @@ export default function HomePage() {
                 {/* Main Content */}
                 {!events.length ? (
                     /* Upload Section */
-                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
-                        {/* Header */}
-                        <div className="px-8 py-8 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
-                            <h2 className="text-3xl font-light text-gray-900 mb-2">Upload Document</h2>
-                            <p className="text-gray-600 text-lg">Extract events from any schedule or document</p>
-                        </div>
-
-                        <div className="p-10">
-                            {/* PDF Upload */}
-                            <div className="mb-12">
-                                <div className="flex items-start gap-6 mb-8">
-                                    <div className="flex-shrink-0 w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100/50">
-                                        <FileText className="h-7 w-7 text-blue-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-medium text-gray-900 mb-3">PDF Upload</h3>
-                                        <p className="text-gray-600 text-base leading-relaxed">
-                                            Upload any document with dates and events for automatic extraction
-                                        </p>
-                                    </div>
+                    <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
+                        {/* Header with Toggle */}
+                        <div className="px-8 py-6 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-2xl font-light text-gray-900 mb-1">Upload Document</h2>
+                                    <p className="text-gray-600">Extract events from any schedule or document</p>
                                 </div>
 
-                                <input
-                                    type="file"
-                                    accept=".pdf"
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                    id="file-upload"
-                                />
-
-                                <label
-                                    htmlFor="file-upload"
-                                    className="group relative block w-full p-12 border-2 border-dashed border-gray-200 rounded-2xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
-                                >
-                                    <div className="text-center">
-                                        <Upload className="mx-auto h-16 w-16 text-gray-400 group-hover:text-gray-500 mb-6 transition-colors" />
-                                        <span className="block text-lg font-medium text-gray-900 mb-3">
-                                            Choose PDF file
-                                        </span>
-                                        <span className="block text-sm text-gray-500">
-                                            Supports files up to 50MB • Works with schedules, contracts, timelines
-                                        </span>
-                                    </div>
-                                </label>
-
-                                {file && (
-                                    <div className="mt-6 p-6 bg-emerald-50/80 border border-emerald-200/50 rounded-2xl">
-                                        <div className="flex items-center gap-4">
-                                            <CheckCircle className="h-6 w-6 text-emerald-600 flex-shrink-0" />
-                                            <div className="flex-1">
-                                                <p className="text-base font-medium text-emerald-900">
-                                                    {file.name}
-                                                </p>
-                                                <p className="text-sm text-emerald-700 mt-1">
-                                                    {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={processFile}
-                                                disabled={isProcessing}
-                                                className="inline-flex items-center gap-3 px-6 py-3 bg-gray-900 text-white text-base font-medium rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
-                                            >
-                                                {isProcessing ? (
-                                                    <>
-                                                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                                                        Processing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        Parse PDF
-                                                        <ArrowRight className="h-5 w-5" />
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Divider */}
-                            <div className="relative mb-12">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200"></div>
-                                </div>
-                                <div className="relative flex justify-center text-base">
-                                    <span className="px-6 bg-white text-gray-500">Alternative method</span>
-                                </div>
-                            </div>
-
-                            {/* Manual Text */}
-                            <div>
-                                <div className="flex items-start gap-6 mb-8">
-                                    <div className="flex-shrink-0 w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100/50">
-                                        <FileText className="h-7 w-7 text-gray-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-medium text-gray-900 mb-3">Manual Text</h3>
-                                        <p className="text-gray-600 text-base leading-relaxed">
-                                            Copy and paste any text with dates and events for processing
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <textarea
-                                    className="w-full h-40 p-6 border border-gray-200 rounded-2xl resize-none text-base focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
-                                    placeholder="Paste any document text with dates and events here..."
-                                    value={manualText}
-                                    onChange={(e) => setManualText(e.target.value)}
-                                />
-
-                                {manualText.length > 20 && (
-                                    <div className="mt-6">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">
-                                                {manualText.length} characters ready to process
-                                            </span>
-                                            <button
-                                                onClick={processManualText}
-                                                disabled={isProcessing}
-                                                className="inline-flex items-center gap-3 px-6 py-3 bg-gray-900 text-white text-base font-medium rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
-                                            >
-                                                {isProcessing ? (
-                                                    <>
-                                                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                                                        Processing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        Parse Text
-                                                        <ArrowRight className="h-5 w-5" />
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Tips section */}
-                        <div className="px-10 pb-10">
-                            <div className="bg-gradient-to-r from-gray-50/80 to-blue-50/50 rounded-2xl p-8 border border-gray-100/50">
-                                <h4 className="font-medium text-gray-900 mb-4 text-lg">Tips for best results</h4>
-                                <ul className="space-y-3 text-base text-gray-700">
-                                    <li className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        Use text-based documents (not scanned images)
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        Works with schedules, contracts, timelines, agendas
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        Files under 10MB process faster and more reliably
-                                    </li>
-                                </ul>
-                            </div>
-
-                            {/* Demo Button */}
-                            <div className="mt-6 pt-6 border-t border-gray-100">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900 mb-2">Try the demo</h4>
-                                        <p className="text-sm text-gray-600">Load sample events to see how the interface works</p>
-                                    </div>
+                                {/* Method Toggle */}
+                                <div className="flex items-center bg-gray-100 rounded-xl p-1">
                                     <button
-                                        onClick={loadSampleData}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
+                                        onClick={() => setInputMethod('file')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                            inputMethod === 'file'
+                                                ? 'bg-white shadow text-gray-900'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                        }`}
                                     >
-                                        Load Sample Events
+                                        <FileText className="h-4 w-4 inline mr-2" />
+                                        PDF File
                                     </button>
+                                    <button
+                                        onClick={() => setInputMethod('text')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                            inputMethod === 'text'
+                                                ? 'bg-white shadow text-gray-900'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        <FileText className="h-4 w-4 inline mr-2" />
+                                        Manual Text
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-8">
+                            {inputMethod === 'file' ? (
+                                /* PDF Upload */
+                                <div>
+                                    <div className="flex items-start gap-4 mb-6">
+                                        <div className="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100/50">
+                                            <FileText className="h-6 w-6 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-medium text-gray-900 mb-2">Upload PDF Document</h3>
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                Upload any document with dates and events for automatic extraction
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <input
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        id="file-upload"
+                                    />
+
+                                    <label
+                                        htmlFor="file-upload"
+                                        className="group relative block w-full p-8 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                    >
+                                        <div className="text-center">
+                                            <Upload className="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 mb-4 transition-colors" />
+                                            <span className="block text-lg font-medium text-gray-900 mb-2">
+                                                Choose PDF file
+                                            </span>
+                                            <span className="block text-sm text-gray-500">
+                                                Supports files up to 50MB • Works with schedules, contracts, timelines
+                                            </span>
+                                        </div>
+                                    </label>
+
+                                    {file && (
+                                        <div className="mt-4 p-4 bg-emerald-50/80 border border-emerald-200/50 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-emerald-900">
+                                                        {file.name}
+                                                    </p>
+                                                    <p className="text-xs text-emerald-700 mt-1">
+                                                        {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={processFile}
+                                                    disabled={isProcessing}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow hover:shadow-lg"
+                                                >
+                                                    {isProcessing ? (
+                                                        <>
+                                                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Parse PDF
+                                                            <ArrowRight className="h-4 w-4" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* Manual Text */
+                                <div>
+                                    <div className="flex items-start gap-4 mb-6">
+                                        <div className="flex-shrink-0 w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100/50">
+                                            <FileText className="h-6 w-6 text-gray-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-medium text-gray-900 mb-2">Paste Text Content</h3>
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                Copy and paste any text with dates and events for processing
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <textarea
+                                        className="w-full h-32 p-4 border border-gray-200 rounded-xl resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                                        placeholder="Paste any document text with dates and events here..."
+                                        value={manualText}
+                                        onChange={(e) => setManualText(e.target.value)}
+                                    />
+
+                                    {manualText.length > 20 && (
+                                        <div className="mt-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-gray-600">
+                                                    {manualText.length} characters ready to process
+                                                </span>
+                                                <button
+                                                    onClick={processManualText}
+                                                    disabled={isProcessing}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200 shadow hover:shadow-lg"
+                                                >
+                                                    {isProcessing ? (
+                                                        <>
+                                                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Parse Text
+                                                            <ArrowRight className="h-4 w-4" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Tips and Demo */}
+                            <div className="mt-8 pt-6 border-t border-gray-100">
+                                <div className="flex items-start justify-between gap-6">
+                                    {/* Tips */}
+                                    <div className="flex-1">
+                                        <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best results</h4>
+                                        <ul className="space-y-2 text-sm text-gray-700">
+                                            <li className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                Use text-based documents (not scanned images)
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                Works with schedules, contracts, timelines, agendas
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                Files under 10MB process faster and more reliably
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Demo Button */}
+                                    <div className="flex-shrink-0">
+                                        <button
+                                            onClick={loadSampleData}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
+                                        >
+                                            Try Demo
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    /* Results Section */
+                    /* Results Section - залишаємо без змін */
                     <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-3xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden">
                         {/* Header */}
                         <div className="px-10 py-8 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
@@ -636,14 +657,7 @@ export default function HomePage() {
                                                 </div>
 
                                                 {/* Right side */}
-                                                <div className="flex flex-col items-end gap-6">
-                                                    <div>
-                                                        {/* Badge */}
-                                                        <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
-                                                            {event.type}
-                                                        </span>
-                                                    </div>
-
+                                                <div className="flex items-center gap-3">
                                                     {/* Add to Google кнопка тільки НЕ в режимі вибору */}
                                                     {!isSelectionMode && (
                                                         <button
@@ -656,7 +670,10 @@ export default function HomePage() {
                                                         </button>
                                                     )}
 
-
+                                                    {/* Badge */}
+                                                    <span className={`px-4 py-2 ${style.badge} text-white text-sm font-medium rounded-full uppercase tracking-wide shadow-lg flex-shrink-0`}>
+                                                        {event.type}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
