@@ -307,17 +307,16 @@ export default function HomePage() {
 
             <div className="relative max-w-6xl mx-auto px-6 py-16">
                 {/* Header */}
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-4 mb-8">
-                        <div className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10">
-                            <Calendar className="h-10 w-10 text-white" />
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10">
+                            <Calendar className="h-6 w-6 text-white" />
                         </div>
-                        <h1 className="text-6xl font-light tracking-tight text-white">
+                        <h1 className="text-3xl font-light tracking-tight text-white">
                             Schedule Parser
                         </h1>
                     </div>
-                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
-                        Extract events and dates from any document or schedule.
+                    <p className="text-sm text-gray-300 max-w-xl mx-auto leading-relaxed font-light">
                         AI-powered parsing for meetings, deadlines, and important dates.
                     </p>
                 </div>
