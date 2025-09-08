@@ -386,20 +386,22 @@ export default function HomePage() {
                                             id="file-upload"
                                         />
 
-                                        <label
-                                            htmlFor="file-upload"
-                                            className="group relative block w-full p-12 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
-                                        >
-                                            <div className="text-center">
-                                                <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
-                                                <span className="block text-base font-medium text-gray-900 mb-1">
-                                                    Choose PDF file
-                                                </span>
-                                                <span className="block text-sm text-gray-500">
-                                                    Up to 50MB • Works with schedules, contracts, timelines
-                                                </span>
-                                            </div>
-                                        </label>
+                                        {!file && (
+                                            <label
+                                                htmlFor="file-upload"
+                                                className="group relative block w-full p-12 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                            >
+                                                <div className="text-center">
+                                                    <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
+                                                    <span className="block text-base font-medium text-gray-900 mb-1">
+                                                        Choose PDF file
+                                                    </span>
+                                                    <span className="block text-sm text-gray-500">
+                                                        Up to 50MB • Works with schedules, contracts, timelines
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        )}
 
                                         {file && (
                                             <div className="mt-3 p-3 bg-emerald-50/80 border border-emerald-200/50 rounded-lg">
