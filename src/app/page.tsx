@@ -416,6 +416,13 @@ export default function HomePage() {
                                                         </p>
                                                     </div>
                                                     <button
+                                                        onClick={() => setFile(null)}
+                                                        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-full transition-all duration-200 text-sm font-medium"
+                                                        title="Remove file"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                    <button
                                                         onClick={processFile}
                                                         disabled={isProcessing}
                                                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
