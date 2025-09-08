@@ -147,49 +147,48 @@ export async function analyzeTextWithOpenAI(text: string) {
     });
 
     // УНІВЕРСАЛЬНИЙ СИСТЕМНИЙ ПРОМПТ ДЛЯ БУДЬ-ЯКИХ ДОКУМЕНТІВ
-    const systemPrompt = `You are an expert at extracting ALL dates and events from any type of document - legal documents, contracts, schedules, timelines, project plans, court filings, business agreements, etc.
+    const systemPrompt = `You are an expert at extracting ALL dates and events from any type of document - legal documents, contracts, schedules, timelines, project plans, court filings, business agreements, academic syllabi, etc.
 
 CRITICAL REQUIREMENTS:
 1. Extract EVERY date mentioned in the text - do not limit to specific months or ranges
 2. Include ALL events from the entire document, regardless of time period
-3. If no year is specified, use these rules:
-   - September-December dates: use 2024
-   - January-August dates: use 2025
-   - For legal/business documents: infer from context or use current year
-4. Intelligently categorize events based on context
+3. PRIORITIZE GRANULAR TASKS over general events
 
-EVENT TYPES TO IDENTIFY:
-- "meeting": meetings, calls, conferences, discussions, interviews, consultations, sessions
-- "deadline": deadlines, due dates, submission dates, expiration dates, cutoff dates, maturity dates
-- "event": workshops, seminars, presentations, launches, ceremonies, shows, exhibitions
-- "appointment": appointments, visits, scheduled meetings, bookings, reservations
-- "task": tasks, projects, milestones, deliverables, assignments, work items
-- "legal": hearings, court dates, trials, depositions, filings, motions, briefs, settlements, arbitrations
-- "other": general reminders, notes, updates, reviews, or unspecified events
+ACADEMIC SYLLABUS SPECIFIC - VERY IMPORTANT:
+- ALWAYS extract INDIVIDUAL reading assignments, not general "Week X readings"
+- BREAK DOWN each week into SEPARATE tasks:
+  * Each reading assignment = separate event
+  * Each homework = separate event  
+  * Each exam/quiz = separate event
+  * Each paper/project = separate event
+- Example: Instead of "Week 1 Activities", create:
+  * "Read: Chapter 1-3, pages 15-45"
+  * "Assignment: Motion to Dismiss analysis"
+  * "Discussion: Case briefing exercise"
 
-ANALYZE THE DOCUMENT STRUCTURE:
-- Identify sections, headers, or categories in the document
-- Use the document's own terminology and structure
-- Preserve the original event descriptions as much as possible
-- Extract implicit dates (e.g., "30 days from signing" if signing date is known)
+SMART DATE HANDLING:
+- If you see "Week 1", "Week 2" etc. WITHOUT specific dates, treat it as an ACADEMIC DOCUMENT
+- For academic documents with relative weeks: 
+  * If current month is Aug-Dec: assume Fall semester, Week 1 = early September
+  * If current month is Jan-May: assume Spring semester, Week 1 = mid January  
+  * If current month is Jun-Jul: assume Summer session, Week 1 = early June
+- For absolute dates without year: Sep-Dec = current year, Jan-Aug = next year
+- For legal/business documents: infer from context or use current year
 
-You MUST return ONLY a valid JSON object with this exact format:
-{
-  "events": [
-    {
-      "title": "Event description from the document", 
-      "date": "YYYY-MM-DD", 
-      "type": "meeting|deadline|event|appointment|task|legal|other",
-      "description": "Additional context or details (optional)"
-    }
-  ]
-}
+EXTRACTION STRATEGY:
+1. First scan for all reading assignments, homework, exams, projects
+2. Create SEPARATE events for each specific task
+3. Assign appropriate dates based on week structure
+4. Use descriptive titles that include specific content (page numbers, chapter names, case names)
 
-IMPORTANT: 
-- Extract ALL dates found in the text regardless of month or year
-- Be especially careful with legal and business documents which may have critical dates
-- Include contractual obligations, payment schedules, review periods, notice requirements
-- For recurring events, create separate entries for each occurrence if dates are specified`;
+For each event found, return a JSON object with:
+- title: SPECIFIC, descriptive name (include page numbers, chapters, case names)
+- date: YYYY-MM-DD format (calculate real dates for Week X)
+- type: one of [meeting, deadline, event, appointment, task, legal, other]
+- description: additional context or details about the specific assignment
+
+Return ONLY valid JSON in this exact format:
+{"events": [{"title": "Read: Handbook Chapters 25-28, pages 181-206", "date": "2025-01-17", "type": "task", "description": "Reading assignment for Legal Writing course"}]}`;
 
     try {
         // Розбиваємо довгий текст на частини якщо потрібно
@@ -238,14 +237,23 @@ IMPORTANT:
             else if (hasBusinessTerms) contextHint = 'This appears to be a business document. ';
             else if (hasAcademicTerms) contextHint = 'This appears to be an academic document. ';
 
-            const userPrompt = `${contextHint}Extract ALL dates and events from this document. Pay special attention to:
-- ALL dates mentioned, regardless of month or year
-- The document's own structure and terminology
-- Any implicit dates or time periods
-- Critical deadlines or obligations
+            const userPrompt = `${contextHint}Extract ALL dates and events from this document. IMPORTANT - Focus on GRANULAR, SPECIFIC tasks:
 
-Document text:
-${chunk}`;
+                    PRIORITIZE:
+                    - Individual reading assignments with specific pages/chapters
+                    - Specific homework assignments by name
+                    - Individual exams, quizzes, projects
+                    - Specific case studies or legal documents to review
+                    
+                    AVOID:
+                    - General "Week X activities" 
+                    - Vague "class preparation"
+                    - Generic "readings" without specifics
+                    
+                    Break down weekly schedules into SEPARATE events for each specific task.
+                    
+                    Document text:
+                    ${chunk}`;
 
             try {
                 const response = await openai.chat.completions.create({
