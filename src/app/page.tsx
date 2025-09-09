@@ -389,7 +389,7 @@ export default function HomePage() {
                                         {!file && (
                                             <label
                                                 htmlFor="file-upload"
-                                                className="group relative block w-full p-12 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                                className="group relative block w-full p-15 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
                                             >
                                                 <div className="text-center">
                                                     <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
@@ -404,26 +404,33 @@ export default function HomePage() {
                                         )}
 
                                         {file && (
-                                            <div className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300">
+                                            <div className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300 box-border">
                                                 <div className="text-center">
-                                                    <CheckCircle className="mx-auto h-8 w-8 text-emerald-600 mb-3" />
-                                                    <span className="block text-base font-medium text-emerald-900 mb-1">
+                                                    <CheckCircle className="mx-auto h-6 w-6 text-emerald-600 mb-2" />
+                                                    <span className="block text-sm font-medium text-emerald-900 mb-1 truncate">
                                                         {file.name}
                                                     </span>
-                                                    <span className="block text-sm text-emerald-700 mb-4">
+                                                    <span className="block text-xs text-emerald-700 mb-3">
                                                         {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
                                                     </span>
-                                                    <div className="flex items-center justify-center gap-3">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <button
-                                                            onClick={() => setFile(null)}
-                                                            className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-white/50 rounded-lg transition-all duration-200 text-sm font-medium border border-gray-300"
+                                                            onClick={() => {
+                                                                setFile(null)
+                                                                // Очищаємо input елемент
+                                                                const fileInput = document.getElementById('file-upload') as HTMLInputElement
+                                                                if (fileInput) {
+                                                                    fileInput.value = ''
+                                                                }
+                                                            }}
+                                                            className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-white/50 rounded-lg transition-all duration-200 font-medium border border-gray-300"
                                                         >
-                                                            Remove File
+                                                            Remove
                                                         </button>
                                                         <button
                                                             onClick={processFile}
                                                             disabled={isProcessing}
-                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
                                                         >
                                                             {isProcessing ? (
                                                                 <>
