@@ -410,7 +410,7 @@ export default function HomePage() {
                                                     <span className="block text-sm font-medium text-emerald-900 mb-1 truncate">
                                                         {file.name}
                                                     </span>
-                                                    <span className="block text-xs text-emerald-700 mb-3">
+                                                    <span className="block text-s text-emerald-700 mb-3">
                                                         {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
                                                     </span>
                                                     <div className="flex items-center justify-center gap-2">
@@ -465,7 +465,7 @@ export default function HomePage() {
                                         </div>
 
                                         <textarea
-                                            className="w-full h-24 p-3 border border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                                            className="w-full h-54 p-3 border-2 border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
                                             placeholder="Paste any document text with dates and events here..."
                                             value={manualText}
                                             onChange={(e) => setManualText(e.target.value)}
