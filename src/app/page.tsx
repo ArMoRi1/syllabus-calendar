@@ -404,41 +404,40 @@ export default function HomePage() {
                                         )}
 
                                         {file && (
-                                            <div className="mt-3 p-3 bg-emerald-50/80 border border-emerald-200/50 rounded-lg">
-                                                <div className="flex items-center gap-3">
-                                                    <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-medium text-emerald-900">
-                                                            {file.name}
-                                                        </p>
-                                                        <p className="text-xs text-emerald-700">
-                                                            {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
-                                                        </p>
+                                            <div className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300">
+                                                <div className="text-center">
+                                                    <CheckCircle className="mx-auto h-8 w-8 text-emerald-600 mb-3" />
+                                                    <span className="block text-base font-medium text-emerald-900 mb-1">
+                                                        {file.name}
+                                                    </span>
+                                                    <span className="block text-sm text-emerald-700 mb-4">
+                                                        {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
+                                                    </span>
+                                                    <div className="flex items-center justify-center gap-3">
+                                                        <button
+                                                            onClick={() => setFile(null)}
+                                                            className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-white/50 rounded-lg transition-all duration-200 text-sm font-medium border border-gray-300"
+                                                        >
+                                                            Remove File
+                                                        </button>
+                                                        <button
+                                                            onClick={processFile}
+                                                            disabled={isProcessing}
+                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                                        >
+                                                            {isProcessing ? (
+                                                                <>
+                                                                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                                    Processing...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    Parse PDF
+                                                                    <ArrowRight className="h-3 w-3" />
+                                                                </>
+                                                            )}
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={() => setFile(null)}
-                                                        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-full transition-all duration-200 text-sm font-medium"
-                                                        title="Remove file"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                    <button
-                                                        onClick={processFile}
-                                                        disabled={isProcessing}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
-                                                    >
-                                                        {isProcessing ? (
-                                                            <>
-                                                                <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
-                                                                Processing...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                Parse PDF
-                                                                <ArrowRight className="h-3 w-3" />
-                                                            </>
-                                                        )}
-                                                    </button>
                                                 </div>
                                             </div>
                                         )}
