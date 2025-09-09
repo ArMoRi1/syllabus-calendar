@@ -389,11 +389,11 @@ export default function HomePage() {
                                         {!file && (
                                             <label
                                                 htmlFor="file-upload"
-                                                className="group relative block w-full p-15 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                                className="group relative block w-full p-15  border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
                                             >
                                                 <div className="text-center">
                                                     <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
-                                                    <span className="block text-base font-medium text-gray-900 mb-1">
+                                                    <span className="block text-base font-medium text-gray-900 mb-1.5">
                                                         Choose PDF file
                                                     </span>
                                                     <span className="block text-sm text-gray-500">
@@ -465,7 +465,7 @@ export default function HomePage() {
                                         </div>
 
                                         <textarea
-                                            className="w-full h-54 p-3 border-2 border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                                            className="w-full h-54 p-3  border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
                                             placeholder="Paste any document text with dates and events here..."
                                             value={manualText}
                                             onChange={(e) => setManualText(e.target.value)}
@@ -539,7 +539,7 @@ export default function HomePage() {
                         /* Results Section */
                         <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden mb-6">
                             {/* Header */}
-                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-emerald-50/50 border-b border-gray-100/50">
+                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-gray-100/50 border-b border-gray-100/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h2 className="text-xl font-light text-gray-900 mb-1">Parsed Events</h2>
@@ -560,7 +560,7 @@ export default function HomePage() {
                                                 <button
                                                     onClick={exportSelectedToGoogle}
                                                     disabled={selectedEvents.length === 0}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
                                                     title={selectedEvents.length === 1 ? "Open in Google Calendar" : "Download ICS file for import"}
                                                 >
                                                     <Calendar className="h-4 w-4" />
@@ -581,14 +581,14 @@ export default function HomePage() {
                                         ) : (
                                             <button
                                                 onClick={toggleSelectionMode}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200"
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all duration-200"
                                             >
                                                 Select Multiple
                                             </button>
                                         )}
                                         <button
                                             onClick={resetForm}
-                                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+                                            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
                                         >
                                             Parse Another
                                         </button>
@@ -602,7 +602,7 @@ export default function HomePage() {
                                             onClick={toggleSelectAll}
                                             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                         >
-                                            <div className={`w-4 h-4 border-2 rounded ${selectAll ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'} flex items-center justify-center`}>
+                                            <div className={`w-4 h-4 border-2 rounded ${selectAll ? 'bg-gray-900 border-gray-900' : 'border-gray-300'} flex items-center justify-center`}>
                                                 {selectAll && (
                                                     <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -628,7 +628,7 @@ export default function HomePage() {
                                             <div
                                                 key={event.id}
                                                 className={`border-l-4 ${style.color} p-4 rounded-r-xl transition-all duration-300 hover:shadow-md hover:shadow-gray-200/50 hover:-translate-y-0.5 ${
-                                                    isSelectionMode && isSelected ? 'ring-2 ring-emerald-300 bg-emerald-50/30' : ''
+                                                    isSelectionMode && isSelected ? 'ring-2 ring-gray-400 bg-gray-50/50' : ''
                                                 }`}
                                             >
                                                 <div className="flex items-start gap-3">
@@ -638,7 +638,7 @@ export default function HomePage() {
                                                             onClick={() => toggleEventSelection(event.id)}
                                                             className="flex-shrink-0 mt-0.5"
                                                         >
-                                                            <div className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 hover:border-emerald-400'} flex items-center justify-center transition-colors`}>
+                                                            <div className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-gray-900 border-gray-900' : 'border-gray-300 hover:border-gray-500'} flex items-center justify-center transition-colors`}>
                                                                 {isSelected && (
                                                                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -677,7 +677,7 @@ export default function HomePage() {
                                                         {!isSelectionMode && (
                                                             <button
                                                                 onClick={() => exportSingleEvent(event)}
-                                                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1.5"
+                                                                className="px-3 py-1.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1.5"
                                                                 title="Add this event to Google Calendar"
                                                             >
                                                                 <Calendar className="h-3 w-3" />
@@ -701,5 +701,4 @@ export default function HomePage() {
                 </div>
             </div>
         </div>
-    )
-}
+    )}
