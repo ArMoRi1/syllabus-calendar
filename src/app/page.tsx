@@ -365,7 +365,7 @@ export default function HomePage() {
                             <div className="p-6">
                                 {inputMethod === 'file' ? (
                                     /* PDF Upload */
-                                    <div>
+                                    <div className="max-h-fit overflow-hidden">
                                         <div className="flex items-start gap-3 mb-4">
                                             <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100/50">
                                                 <FileText className="h-5 w-5 text-blue-600" />
@@ -389,14 +389,14 @@ export default function HomePage() {
                                         {!file && (
                                             <label
                                                 htmlFor="file-upload"
-                                                className="group relative block w-full p-15  border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                                className="group relative block w-full p-15 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
                                             >
                                                 <div className="text-center">
                                                     <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
                                                     <span className="block text-base font-medium text-gray-900 mb-1.5">
                                                         Choose PDF file
                                                     </span>
-                                                    <span className="block text-sm text-gray-500">
+                                                    <span className="block text-base text-gray-500">
                                                         Up to 50MB • Works with schedules, contracts, timelines
                                                     </span>
                                                 </div>
@@ -465,7 +465,7 @@ export default function HomePage() {
                                         </div>
 
                                         <textarea
-                                            className="w-full h-54 p-3  border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                                            className="w-full h-54 p-3 border-2 border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
                                             placeholder="Paste any document text with dates and events here..."
                                             value={manualText}
                                             onChange={(e) => setManualText(e.target.value)}
@@ -670,7 +670,10 @@ export default function HomePage() {
                                                             </p>
                                                         )}
                                                     </div>
-
+                                                    {/* Badge */}
+                                                    <span className={`px-2 py-1 ${style.badge} text-white text-xs font-medium rounded-full uppercase tracking-wide flex-shrink-0`}>
+                                                            {event.type}
+                                                        </span>
                                                     {/* Right side */}
                                                     <div className="flex items-center gap-2">
                                                         {/* Add to Google кнопка тільки НЕ в режимі вибору */}
@@ -685,10 +688,7 @@ export default function HomePage() {
                                                             </button>
                                                         )}
 
-                                                        {/* Badge */}
-                                                        <span className={`px-2 py-1 ${style.badge} text-white text-xs font-medium rounded-full uppercase tracking-wide flex-shrink-0`}>
-                                                            {event.type}
-                                                        </span>
+
                                                     </div>
                                                 </div>
                                             </div>
