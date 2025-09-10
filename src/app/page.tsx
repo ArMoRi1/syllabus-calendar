@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Calendar, List, FileText, CheckCircle, ArrowRight, AlertCircle, X } from 'lucide-react'
+import { Upload, Calendar, List, FileText, CheckCircle, ArrowRight, AlertCircle, X, Info, AlertTriangle, Check } from 'lucide-react'
 
 // Типи
 interface ScheduleEvent {
@@ -25,59 +25,165 @@ interface ProcessingResult {
     }
 }
 
-// Функція для стилізації подій
-const getEventStyle = (type: string) => {
-    switch (type.toLowerCase()) {
-        case 'meeting':
-            return {
-                color: 'border-l-blue-400 bg-blue-50/80 border-blue-100/50',
-                badge: 'bg-blue-500/90',
-                icon: '👥',
-                textColor: 'text-blue-700'
-            }
-        case 'deadline':
-            return {
-                color: 'border-l-red-400 bg-red-50/80 border-red-100/50',
-                badge: 'bg-red-500/90',
-                icon: '⏰',
-                textColor: 'text-red-700'
-            }
-        case 'event':
-            return {
-                color: 'border-l-purple-400 bg-purple-50/80 border-purple-100/50',
-                badge: 'bg-purple-500/90',
-                icon: '🎉',
-                textColor: 'text-purple-700'
-            }
-        case 'appointment':
-            return {
-                color: 'border-l-green-400 bg-green-50/80 border-green-100/50',
-                badge: 'bg-green-500/90',
-                icon: '📅',
-                textColor: 'text-green-700'
-            }
-        case 'task':
-            return {
-                color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
-                badge: 'bg-amber-500/90',
-                icon: '✅',
-                textColor: 'text-amber-700'
-            }
-        case 'legal':
-            return {
-                color: 'border-l-indigo-400 bg-indigo-50/80 border-indigo-100/50',
-                badge: 'bg-indigo-500/90',
-                icon: '⚖️',
-                textColor: 'text-indigo-700'
-            }
-        default:
-            return {
-                color: 'border-l-slate-400 bg-slate-50/80 border-slate-100/50',
-                badge: 'bg-slate-500/90',
-                icon: '📋',
-                textColor: 'text-slate-700'
-            }
+// Типи для модального вікна
+type ModalType = 'error' | 'warning' | 'info' | 'success'
+
+interface ModalState {
+    isOpen: boolean
+    type: ModalType
+    title: string
+    message: string
+    details?: string[]
+    onConfirm?: () => void
+    confirmText?: string
+}
+
+// Універсальне модальне вікно
+const NotificationModal = ({
+                               isOpen,
+                               type,
+                               title,
+                               message,
+                               details,
+                               onClose,
+                               onConfirm,
+                               confirmText = 'OK'
+                           }: ModalState & { onClose: () => void }) => {
+    if (!isOpen) return null
+
+    const getIcon = () => {
+        switch (type) {
+            case 'error':
+                return <AlertCircle className="h-5 w-5 text-red-600" />
+            case 'warning':
+                return <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            case 'success':
+                return <Check className="h-5 w-5 text-green-600" />
+            case 'info':
+            default:
+                return <Info className="h-5 w-5 text-blue-600" />
+        }
     }
+
+    const getColorScheme = () => {
+        switch (type) {
+            case 'error':
+                return {
+                    bg: 'bg-red-100',
+                    border: 'border-red-200',
+                    titleColor: 'text-red-900',
+                    textColor: 'text-red-800',
+                    detailBg: 'bg-red-50',
+                    detailText: 'text-red-700',
+                    button: 'bg-red-600 hover:bg-red-700'
+                }
+            case 'warning':
+                return {
+                    bg: 'bg-yellow-100',
+                    border: 'border-yellow-200',
+                    titleColor: 'text-yellow-900',
+                    textColor: 'text-yellow-800',
+                    detailBg: 'bg-yellow-50',
+                    detailText: 'text-yellow-700',
+                    button: 'bg-yellow-600 hover:bg-yellow-700'
+                }
+            case 'success':
+                return {
+                    bg: 'bg-green-100',
+                    border: 'border-green-200',
+                    titleColor: 'text-green-900',
+                    textColor: 'text-green-800',
+                    detailBg: 'bg-green-50',
+                    detailText: 'text-green-700',
+                    button: 'bg-green-600 hover:bg-green-700'
+                }
+            case 'info':
+            default:
+                return {
+                    bg: 'bg-blue-100',
+                    border: 'border-blue-200',
+                    titleColor: 'text-blue-900',
+                    textColor: 'text-blue-800',
+                    detailBg: 'bg-blue-50',
+                    detailText: 'text-blue-700',
+                    button: 'bg-blue-600 hover:bg-blue-700'
+                }
+        }
+    }
+
+    const colors = getColorScheme()
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 animate-fade-in">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 ${colors.bg} rounded-lg`}>
+                            {getIcon()}
+                        </div>
+                        <h3 className={`text-lg font-semibold ${colors.titleColor}`}>{title}</h3>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <X className="h-5 w-5 text-gray-500" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                    <p className={`${colors.textColor} mb-4`}>
+                        {message}
+                    </p>
+
+                    {details && details.length > 0 && (
+                        <div className={`${colors.detailBg} rounded-lg p-4 mb-4`}>
+                            <ul className="space-y-2 text-sm">
+                                {details.map((detail, index) => (
+                                    <li key={index} className={`flex items-start gap-2 ${colors.detailText}`}>
+                                        <span className="text-xs mt-0.5">•</span>
+                                        {detail}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-3 p-6 border-t border-gray-100">
+                    {onConfirm ? (
+                        <>
+                            <button
+                                onClick={onClose}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onConfirm()
+                                    onClose()
+                                }}
+                                className={`flex-1 px-4 py-2 ${colors.button} text-white rounded-lg transition-colors font-medium`}
+                            >
+                                {confirmText}
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                        >
+                            {confirmText}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
 }
 
 // Компонент модального вікна для "Жодних подій не знайдено"
@@ -165,6 +271,61 @@ const NoEventsModal = ({ isOpen, onClose, fileName, suggestions }: {
     )
 }
 
+// Функція для стилізації подій
+const getEventStyle = (type: string) => {
+    switch (type.toLowerCase()) {
+        case 'meeting':
+            return {
+                color: 'border-l-blue-400 bg-blue-50/80 border-blue-100/50',
+                badge: 'bg-blue-500/90',
+                icon: '👥',
+                textColor: 'text-blue-700'
+            }
+        case 'deadline':
+            return {
+                color: 'border-l-red-400 bg-red-50/80 border-red-100/50',
+                badge: 'bg-red-500/90',
+                icon: '⏰',
+                textColor: 'text-red-700'
+            }
+        case 'event':
+            return {
+                color: 'border-l-purple-400 bg-purple-50/80 border-purple-100/50',
+                badge: 'bg-purple-500/90',
+                icon: '🎉',
+                textColor: 'text-purple-700'
+            }
+        case 'appointment':
+            return {
+                color: 'border-l-green-400 bg-green-50/80 border-green-100/50',
+                badge: 'bg-green-500/90',
+                icon: '📅',
+                textColor: 'text-green-700'
+            }
+        case 'task':
+            return {
+                color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
+                badge: 'bg-amber-500/90',
+                icon: '✅',
+                textColor: 'text-amber-700'
+            }
+        case 'legal':
+            return {
+                color: 'border-l-indigo-400 bg-indigo-50/80 border-indigo-100/50',
+                badge: 'bg-indigo-500/90',
+                icon: '⚖️',
+                textColor: 'text-indigo-700'
+            }
+        default:
+            return {
+                color: 'border-l-slate-400 bg-slate-50/80 border-slate-100/50',
+                badge: 'bg-slate-500/90',
+                icon: '📋',
+                textColor: 'text-slate-700'
+            }
+    }
+}
+
 export default function HomePage() {
     const [file, setFile] = useState<File | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -179,9 +340,37 @@ export default function HomePage() {
     const [showNoEventsModal, setShowNoEventsModal] = useState(false)
     const [lastProcessedFile, setLastProcessedFile] = useState<string>('')
 
+    // Стан для модального вікна повідомлень
+    const [modalState, setModalState] = useState<ModalState>({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: '',
+        details: undefined,
+        onConfirm: undefined,
+        confirmText: 'OK'
+    })
+
     useEffect(() => {
         setIsClient(true)
     }, [])
+
+    // Функція для показу модального вікна
+    const showModal = (type: ModalType, title: string, message: string, details?: string[], onConfirm?: () => void, confirmText?: string) => {
+        setModalState({
+            isOpen: true,
+            type,
+            title,
+            message,
+            details,
+            onConfirm,
+            confirmText: confirmText || 'OK'
+        })
+    }
+
+    const closeModal = () => {
+        setModalState(prev => ({ ...prev, isOpen: false }))
+    }
 
     // Функція для експорту однієї події в Google Calendar
     const exportSingleEvent = (event: ScheduleEvent) => {
@@ -237,12 +426,15 @@ export default function HomePage() {
         URL.revokeObjectURL(url)
 
         setTimeout(() => {
-            alert(
-                `📅 Downloaded ${eventCount} events as "schedule-events.ics"\n\n` +
-                `To add to your calendar:\n` +
-                `• Google Calendar: Go to Settings > Import & Export > Import\n` +
-                `• Outlook: File > Open & Export > Import/Export\n` +
-                `• Apple Calendar: File > Import > Select the downloaded file`
+            showModal(
+                'success',
+                'Events Exported Successfully',
+                `Downloaded ${eventCount} events as "schedule-events.ics"`,
+                [
+                    'Google Calendar: Go to Settings > Import & Export > Import',
+                    'Outlook: File > Open & Export > Import/Export',
+                    'Apple Calendar: File > Import > Select the downloaded file'
+                ]
             )
         }, 500)
     }
@@ -252,7 +444,12 @@ export default function HomePage() {
         const selectedEventsList = events.filter(event => selectedEvents.includes(event.id))
 
         if (selectedEventsList.length === 0) {
-            alert('Please select at least one event to export')
+            showModal(
+                'warning',
+                'No Events Selected',
+                'Please select at least one event to export',
+                ['Click checkboxes next to events', 'Or use "Select All" button']
+            )
             return
         }
 
@@ -296,12 +493,30 @@ export default function HomePage() {
                     setSelectedEvents([])
                     setSelectAll(false)
                     setIsSelectionMode(false)
+
+                    // Показуємо успішне повідомлення
+                    showModal(
+                        'success',
+                        'Processing Complete',
+                        `Successfully extracted ${processedEvents.length} events from the document`,
+                        [`${processedEvents.length} events found and parsed`, 'You can now export them to your calendar']
+                    )
                 }
             } else {
-                alert('Error: ' + (result.error || 'Unknown error'))
+                showModal(
+                    'error',
+                    'Processing Error',
+                    result.error || 'Unknown error occurred',
+                    ['Check if the document contains dates', 'Try manual text input instead', 'Ensure PDF is not password protected']
+                )
             }
         } catch (error) {
-            alert('Error processing data')
+            showModal(
+                'error',
+                'Connection Error',
+                'Failed to connect to the processing server',
+                ['Check your internet connection', 'Try again in a few moments', 'Contact support if problem persists']
+            )
         } finally {
             setIsProcessing(false)
         }
@@ -312,7 +527,14 @@ export default function HomePage() {
         if (selectedFile?.type === 'application/pdf') {
             setFile(selectedFile)
         } else {
-            alert('Please upload a PDF file')
+            showModal(
+                'warning',
+                'Invalid File Type',
+                'Please upload a PDF file',
+                ['Only PDF files are supported', 'Convert your document to PDF first', 'Or use manual text input']
+            )
+            // Reset file input
+            e.target.value = ''
         }
     }
 
@@ -339,6 +561,11 @@ export default function HomePage() {
         setIsProcessing(false)
         setShowNoEventsModal(false)
         setLastProcessedFile('')
+        // Reset file input
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement
+        if (fileInput) {
+            fileInput.value = ''
+        }
     }
 
     const toggleSelectionMode = () => {
@@ -370,7 +597,7 @@ export default function HomePage() {
         }
     }
 
-    // Додаємо демонстраційні події для тестування
+    // Демонстраційні події для тестування
     const sampleEvents: ScheduleEvent[] = [
         {
             id: 1,
@@ -400,15 +627,25 @@ export default function HomePage() {
         setSelectedEvents([])
         setSelectAll(false)
         setIsSelectionMode(false)
+        showModal(
+            'info',
+            'Demo Data Loaded',
+            'Sample events have been loaded for demonstration',
+            ['3 sample events loaded', 'You can export them to test the functionality']
+        )
     }
 
     return (
         <div className="h-screen text-white relative overflow-hidden" style={{backgroundColor: '#161513'}}>
             {/* Background patterns */}
-            <div
-                className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,_rgba(120,119,198,0.1)_0%,_transparent_50%)]"></div>
-            <div
-                className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.05)_0%,_transparent_50%)]"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,_rgba(120,119,198,0.1)_0%,_transparent_50%)]"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.05)_0%,_transparent_50%)]"></div>
+
+            {/* Notification Modal */}
+            <NotificationModal
+                {...modalState}
+                onClose={closeModal}
+            />
 
             {/* No Events Modal */}
             <NoEventsModal
@@ -442,16 +679,13 @@ export default function HomePage() {
                 <div className="flex-1 overflow-y-auto">
                     {!events.length ? (
                         /* Upload Section */
-                        <div
-                            className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
+                        <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
                             {/* Compact Header with Toggle */}
-                            <div
-                                className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
+                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
                                         <h2 className="text-xl font-light text-gray-900 mb-1">Upload Document</h2>
-                                        <p className="text-sm text-gray-600">Extract events from any schedule or
-                                            document</p>
+                                        <p className="text-sm text-gray-600">Extract events from any schedule or document</p>
                                     </div>
 
                                     {/* Method Toggle */}
@@ -487,13 +721,11 @@ export default function HomePage() {
                                     /* PDF Upload */
                                     <div className="max-h-fit overflow-hidden">
                                         <div className="flex items-start gap-3 mb-4">
-                                            <div
-                                                className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100/50">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100/50">
                                                 <FileText className="h-5 w-5 text-blue-600"/>
                                             </div>
                                             <div>
-                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Upload PDF
-                                                    Document</h3>
+                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Upload PDF Document</h3>
                                                 <p className="text-gray-600 text-sm leading-relaxed">
                                                     Upload any document with dates and events for automatic extraction
                                                 </p>
@@ -514,8 +746,7 @@ export default function HomePage() {
                                                 className="group relative block w-full p-15 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
                                             >
                                                 <div className="text-center">
-                                                    <Upload
-                                                        className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors"/>
+                                                    <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors"/>
                                                     <span className="block text-base font-medium text-gray-900 mb-1.5">
                                                         Choose PDF file
                                                     </span>
@@ -527,12 +758,10 @@ export default function HomePage() {
                                         )}
 
                                         {file && (
-                                            <div
-                                                className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300 box-border">
+                                            <div className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300 box-border">
                                                 <div className="text-center">
                                                     <CheckCircle className="mx-auto h-6 w-6 text-emerald-600 mb-2"/>
-                                                    <span
-                                                        className="block text-sm font-medium text-emerald-900 mb-1 truncate">
+                                                    <span className="block text-sm font-medium text-emerald-900 mb-1 truncate">
                                                         {file.name}
                                                     </span>
                                                     <span className="block text-s text-emerald-700 mb-3">
@@ -559,8 +788,7 @@ export default function HomePage() {
                                                         >
                                                             {isProcessing ? (
                                                                 <>
-                                                                    <div
-                                                                        className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
                                                                     Processing...
                                                                 </>
                                                             ) : (
@@ -579,13 +807,11 @@ export default function HomePage() {
                                     /* Manual Text */
                                     <div>
                                         <div className="flex items-start gap-3 mb-4">
-                                            <div
-                                                className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100/50">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100/50">
                                                 <FileText className="h-5 w-5 text-gray-600"/>
                                             </div>
                                             <div>
-                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Paste Text
-                                                    Content</h3>
+                                                <h3 className="text-lg font-medium text-gray-900 mb-1">Paste Text Content</h3>
                                                 <p className="text-gray-600 text-sm leading-relaxed">
                                                     Copy and paste any text with dates and events for processing
                                                 </p>
@@ -612,8 +838,7 @@ export default function HomePage() {
                                                     >
                                                         {isProcessing ? (
                                                             <>
-                                                                <div
-                                                                    className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                                <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
                                                                 Processing...
                                                             </>
                                                         ) : (
@@ -634,8 +859,7 @@ export default function HomePage() {
                                     <div className="flex items-start justify-between gap-6">
                                         {/* Tips */}
                                         <div className="flex-1">
-                                            <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best
-                                                results</h4>
+                                            <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best results</h4>
                                             <ul className="space-y-2 text-sm text-gray-700">
                                                 <li className="flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
@@ -667,11 +891,9 @@ export default function HomePage() {
                         </div>
                     ) : (
                         /* Results Section */
-                        <div
-                            className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden mb-6">
+                        <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden mb-6">
                             {/* Header */}
-                            <div
-                                className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-gray-100/50 border-b border-gray-100/50">
+                            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-gray-100/50 border-b border-gray-100/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h2 className="text-xl font-light text-gray-900 mb-1">Parsed Events</h2>
@@ -734,14 +956,10 @@ export default function HomePage() {
                                             onClick={toggleSelectAll}
                                             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                         >
-                                            <div
-                                                className={`w-4 h-4 border-2 rounded ${selectAll ? 'bg-gray-900 border-gray-900' : 'border-gray-300'} flex items-center justify-center`}>
+                                            <div className={`w-4 h-4 border-2 rounded ${selectAll ? 'bg-gray-900 border-gray-900' : 'border-gray-300'} flex items-center justify-center`}>
                                                 {selectAll && (
-                                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor"
-                                                         viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd"
-                                                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                              clipRule="evenodd"/>
+                                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                                                     </svg>
                                                 )}
                                             </div>
@@ -774,14 +992,10 @@ export default function HomePage() {
                                                             onClick={() => toggleEventSelection(event.id)}
                                                             className="flex-shrink-0 mt-0.5"
                                                         >
-                                                            <div
-                                                                className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-gray-900 border-gray-900' : 'border-gray-300 hover:border-gray-500'} flex items-center justify-center transition-colors`}>
+                                                            <div className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-gray-900 border-gray-900' : 'border-gray-300 hover:border-gray-500'} flex items-center justify-center transition-colors`}>
                                                                 {isSelected && (
-                                                                    <svg className="w-3 h-3 text-white"
-                                                                         fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fillRule="evenodd"
-                                                                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                              clipRule="evenodd"/>
+                                                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                                                                     </svg>
                                                                 )}
                                                             </div>
@@ -796,8 +1010,7 @@ export default function HomePage() {
                                                                 {event.title}
                                                             </h3>
                                                         </div>
-                                                        <p className={`text-sm font-medium mb-2 ${style.textColor}`}
-                                                           suppressHydrationWarning>
+                                                        <p className={`text-sm font-medium mb-2 ${style.textColor}`} suppressHydrationWarning>
                                                             {isClient && new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
                                                                 weekday: 'long',
                                                                 year: 'numeric',
@@ -812,10 +1025,9 @@ export default function HomePage() {
                                                         )}
                                                     </div>
                                                     {/* Badge */}
-                                                    <span
-                                                        className={`px-2 py-1 ${style.badge} text-white text-xs font-medium rounded-full uppercase tracking-wide flex-shrink-0`}>
-                                                            {event.type}
-                                                        </span>
+                                                    <span className={`px-2 py-1 ${style.badge} text-white text-xs font-medium rounded-full uppercase tracking-wide flex-shrink-0`}>
+                                                        {event.type}
+                                                    </span>
                                                     {/* Right side */}
                                                     <div className="flex items-center gap-2">
                                                         {/* Add to Google кнопка тільки НЕ в режимі вибору */}
@@ -829,8 +1041,6 @@ export default function HomePage() {
                                                                 Add to Google
                                                             </button>
                                                         )}
-
-
                                                     </div>
                                                 </div>
                                             </div>
