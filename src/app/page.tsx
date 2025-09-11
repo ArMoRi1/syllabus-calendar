@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Calendar, List, FileText, CheckCircle, ArrowRight, AlertCircle, X, Info, AlertTriangle, Check } from 'lucide-react'
-
+import { Upload, Calendar, List, FileText, CheckCircle, ArrowRight, AlertCircle, X, Edit3, Check, RotateCcw } from 'lucide-react'
 // Типи
 interface ScheduleEvent {
     id: number
@@ -10,6 +9,7 @@ interface ScheduleEvent {
     date: string
     type: 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other'
     description?: string
+    originalDate?: string
 }
 
 type ViewMode = 'calendar' | 'list'
@@ -326,6 +326,77 @@ const getEventStyle = (type: string) => {
     }
 }
 
+// Компонент для редагування дати
+const DateEditor = ({ event, onSave, onCancel }: {
+    event: ScheduleEvent
+    onSave: (eventId: number, newDate: string) => void
+    onCancel: () => void
+}) => {
+    const [tempDate, setTempDate] = useState(event.date)
+    const [isValid, setIsValid] = useState(true)
+
+    useEffect(() => {
+        // Перевіряємо валідність дати
+        const date = new Date(tempDate)
+        setIsValid(!isNaN(date.getTime()) && tempDate.length === 10)
+    }, [tempDate])
+
+    const handleSave = () => {
+        if (isValid && tempDate !== event.date) {
+            onSave(event.id, tempDate)
+        } else {
+            onCancel()
+        }
+    }
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && isValid) {
+            handleSave()
+        } else if (e.key === 'Escape') {
+            onCancel()
+        }
+    }
+
+    return (
+        <div className="flex items-center gap-2 p-2 bg-white rounded-lg border-2 border-blue-200 shadow-sm">
+            <input
+                type="date"
+                value={tempDate}
+                onChange={(e) => setTempDate(e.target.value)}
+                onKeyDown={handleKeyPress}
+                className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isValid ? 'border-gray-300' : 'border-red-300 bg-red-50'
+                }`}
+                autoFocus
+            />
+            <button
+                onClick={handleSave}
+                disabled={!isValid}
+                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                title="Save date"
+            >
+                <Check className="h-4 w-4" />
+            </button>
+            <button
+                onClick={onCancel}
+                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                title="Cancel editing"
+            >
+                <X className="h-4 w-4" />
+            </button>
+            {event.originalDate && event.originalDate !== tempDate && (
+                <button
+                    onClick={() => setTempDate(event.originalDate!)}
+                    className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                    title="Restore original date"
+                >
+                    <RotateCcw className="h-4 w-4" />
+                </button>
+            )}
+        </div>
+    )
+}
+
 export default function HomePage() {
     const [file, setFile] = useState<File | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -339,6 +410,8 @@ export default function HomePage() {
     const [inputMethod, setInputMethod] = useState<InputMethod>('file')
     const [showNoEventsModal, setShowNoEventsModal] = useState(false)
     const [lastProcessedFile, setLastProcessedFile] = useState<string>('')
+    const [editingEventId, setEditingEventId] = useState<number | null>(null)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
     // Стан для модального вікна повідомлень
     const [modalState, setModalState] = useState<ModalState>({
@@ -355,6 +428,52 @@ export default function HomePage() {
         setIsClient(true)
     }, [])
 
+    // Функція для збереження нової дати події
+    const saveEventDate = (eventId: number, newDate: string) => {
+        setEvents(prevEvents =>
+            prevEvents.map(event => {
+                if (event.id === eventId) {
+                    // Зберігаємо оригінальну дату при першому редагуванні
+                    const originalDate = event.originalDate || event.date
+                    return {
+                        ...event,
+                        date: newDate,
+                        originalDate
+                    }
+                }
+                return event
+            })
+        )
+        setEditingEventId(null)
+        setHasUnsavedChanges(true)
+    }
+
+    // Функція для відновлення всіх дат до оригінальних
+        const restoreAllDates = () => {
+            setEvents(prevEvents =>
+                prevEvents.map(event => ({
+                    ...event,
+                    date: event.originalDate || event.date
+                }))
+            )
+            setHasUnsavedChanges(false)
+        }
+
+    // Функція для відновлення однієї дати до оригінальної
+        const restoreEventDate = (eventId: number) => {
+            setEvents(prevEvents =>
+                prevEvents.map(event => {
+                    if (event.id === eventId && event.originalDate) {
+                        return {
+                            ...event,
+                            date: event.originalDate
+                        }
+                    }
+                    return event
+                })
+            )
+            setHasUnsavedChanges(false)
+        }
     // Функція для показу модального вікна
     const showModal = (type: ModalType, title: string, message: string, details?: string[], onConfirm?: () => void, confirmText?: string) => {
         setModalState({
@@ -493,6 +612,7 @@ export default function HomePage() {
                     setSelectedEvents([])
                     setSelectAll(false)
                     setIsSelectionMode(false)
+                    setHasUnsavedChanges(false)
 
                     // Показуємо успішне повідомлення
                     showModal(
@@ -561,6 +681,9 @@ export default function HomePage() {
         setIsProcessing(false)
         setShowNoEventsModal(false)
         setLastProcessedFile('')
+        setEditingEventId(null)
+        setHasUnsavedChanges(false)
+
         // Reset file input
         const fileInput = document.getElementById('file-upload') as HTMLInputElement
         if (fileInput) {
@@ -627,6 +750,9 @@ export default function HomePage() {
         setSelectedEvents([])
         setSelectAll(false)
         setIsSelectionMode(false)
+        setIsSelectionMode(false)
+        setHasUnsavedChanges(false)
+
         showModal(
             'info',
             'Demo Data Loaded',
@@ -900,11 +1026,12 @@ export default function HomePage() {
                                         <p className="text-sm text-gray-600 mb-1">
                                             Found {events.length} events
                                             {isSelectionMode && ` • ${selectedEvents.length} selected`}
+                                            {hasUnsavedChanges && " • ⚠️ Modified dates"}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {isSelectionMode
                                                 ? "Select events for batch export or individual Google Calendar links"
-                                                : "Click 'Add to Google' for individual events or 'Select Multiple' for batch export"
+                                                : "\"Click 'Add to Google' for individual events or 'Select Multiple' for batch export\" You can edit dates with the pencil icon"
                                             }
                                         </p>
                                     </div>
@@ -947,6 +1074,16 @@ export default function HomePage() {
                                             Parse Another
                                         </button>
                                     </div>
+
+                                    {hasUnsavedChanges && (
+                                        <button
+                                            onClick={restoreAllDates}
+                                            className="inline-flex items-center gap-2 px-3 py-1.5 text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-sm font-medium rounded-lg transition-all duration-200 border border-orange-200"
+                                        >
+                                            <RotateCcw className="h-4 w-4"/>
+                                            Restore All Dates
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Select All Controls */}
@@ -978,12 +1115,15 @@ export default function HomePage() {
                                     {events.map(event => {
                                         const style = getEventStyle(event.type)
                                         const isSelected = selectedEvents.includes(event.id)
+                                        const isEditing = editingEventId === event.id
+                                        const isModified = event.originalDate && event.originalDate !== event.date
+
                                         return (
                                             <div
                                                 key={event.id}
                                                 className={`border-l-4 ${style.color} p-4 rounded-r-xl transition-all duration-300 hover:shadow-md hover:shadow-gray-200/50 hover:-translate-y-0.5 ${
                                                     isSelectionMode && isSelected ? 'ring-2 ring-gray-400 bg-gray-50/50' : ''
-                                                }`}
+                                                } ${isModified ? 'bg-yellow-50/30' : ''}`}
                                             >
                                                 <div className="flex items-start gap-3">
                                                     {/* Checkbox - тільки в режимі вибору */}
@@ -1008,16 +1148,51 @@ export default function HomePage() {
                                                             <span className="text-lg">{style.icon}</span>
                                                             <h3 className="text-base font-medium text-gray-900 leading-relaxed">
                                                                 {event.title}
+                                                                {isModified && (
+                                                                    <span className="ml-2 text-xs text-orange-600 font-normal">(date modified)</span>
+                                                                )}
                                                             </h3>
                                                         </div>
-                                                        <p className={`text-sm font-medium mb-2 ${style.textColor}`} suppressHydrationWarning>
-                                                            {isClient && new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
-                                                                weekday: 'long',
-                                                                year: 'numeric',
-                                                                month: 'long',
-                                                                day: 'numeric',
-                                                            })}
-                                                        </p>
+                                                        {/* Date Display/Editor */}
+                                                        <div className="mb-2">
+                                                            {isEditing ? (
+                                                                <DateEditor
+                                                                    event={event}
+                                                                    onSave={saveEventDate}
+                                                                    onCancel={() => setEditingEventId(null)}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className={`text-sm font-medium ${style.textColor}`}
+                                                                       suppressHydrationWarning>
+                                                                        {isClient && new Date(event.date + "T00:00:00").toLocaleDateString('en-US', {
+                                                                            weekday: 'long',
+                                                                            year: 'numeric',
+                                                                            month: 'long',
+                                                                            day: 'numeric',
+                                                                        })}
+                                                                    </p>
+                                                                    {!isSelectionMode && (
+                                                                        <button
+                                                                            onClick={() => setEditingEventId(event.id)}
+                                                                            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                                            title="Edit date"
+                                                                        >
+                                                                            <Edit3 className="h-3 w-3" />
+                                                                        </button>
+                                                                    )}
+                                                                    {isModified && (
+                                                                        <button
+                                                                            onClick={() => restoreEventDate(event.id)}
+                                                                            className="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                                                                            title="Restore original date"
+                                                                        >
+                                                                            <RotateCcw className="h-3 w-3" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         {event.description && (
                                                             <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
                                                                 {event.description}
