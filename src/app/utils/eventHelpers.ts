@@ -2,55 +2,6 @@
 
 import { EventType, EventStyle, ScheduleEvent } from '../types'
 
-export const getEventStyle = (type: EventType): EventStyle => {
-    const styles: Record<EventType, EventStyle> = {
-        meeting: {
-            color: 'border-l-blue-400 bg-blue-50/80 border-blue-100/50',
-            badge: 'bg-blue-500/90',
-            icon: '👥',
-            textColor: 'text-blue-700'
-        },
-        deadline: {
-            color: 'border-l-red-400 bg-red-50/80 border-red-100/50',
-            badge: 'bg-red-500/90',
-            icon: '⏰',
-            textColor: 'text-red-700'
-        },
-        event: {
-            color: 'border-l-purple-400 bg-purple-50/80 border-purple-100/50',
-            badge: 'bg-purple-500/90',
-            icon: '🎉',
-            textColor: 'text-purple-700'
-        },
-        appointment: {
-            color: 'border-l-green-400 bg-green-50/80 border-green-100/50',
-            badge: 'bg-green-500/90',
-            icon: '📅',
-            textColor: 'text-green-700'
-        },
-        task: {
-            color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
-            badge: 'bg-amber-500/90',
-            icon: '✅',
-            textColor: 'text-amber-700'
-        },
-        legal: {
-            color: 'border-l-indigo-400 bg-indigo-50/80 border-indigo-100/50',
-            badge: 'bg-indigo-500/90',
-            icon: '⚖️',
-            textColor: 'text-indigo-700'
-        },
-        other: {
-            color: 'border-l-slate-400 bg-slate-50/80 border-slate-100/50',
-            badge: 'bg-slate-500/90',
-            icon: '📋',
-            textColor: 'text-slate-700'
-        }
-    }
-
-    return styles[type] || styles.other
-}
-
 export const formatDateForGoogle = (date: string): string => {
     const d = new Date(date)
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
@@ -162,17 +113,81 @@ export const sortEventsByDate = (events: ScheduleEvent[]): ScheduleEvent[] => {
     return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 }
 
-// Функция для группировки событий по месяцам
-export const groupEventsByMonth = (events: ScheduleEvent[]): Record<string, ScheduleEvent[]> => {
-    return events.reduce((groups, event) => {
-        const date = new Date(event.date)
-        const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
 
-        if (!groups[monthKey]) {
-            groups[monthKey] = []
-        }
+export const getEventStyle = (type: string) => {
+    switch (type.toLowerCase()) {
+        case 'meeting':
+            return {
+                color: 'border-l-blue-400 bg-blue-50/80 border-blue-100/50',
+                badge: 'bg-blue-500/90',
+                icon: '👥',
+                textColor: 'text-blue-700'
+            };
+        case 'deadline':
+            return {
+                color: 'border-l-red-400 bg-red-50/80 border-red-100/50',
+                badge: 'bg-red-500/90',
+                icon: '⏰',
+                textColor: 'text-red-700'
+            };
+        case 'event':
+            return {
+                color: 'border-l-purple-400 bg-purple-50/80 border-purple-100/50',
+                badge: 'bg-purple-500/90',
+                icon: '🎉',
+                textColor: 'text-purple-700'
+            };
+        case 'appointment':
+            return {
+                color: 'border-l-green-400 bg-green-50/80 border-green-100/50',
+                badge: 'bg-green-500/90',
+                icon: '📅',
+                textColor: 'text-green-700'
+            };
+        case 'task':
+            return {
+                color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
+                badge: 'bg-amber-500/90',
+                icon: '✓',
+                textColor: 'text-amber-700'
+            };
+        case 'legal':
+            return {
+                color: 'border-l-indigo-400 bg-indigo-50/80 border-indigo-100/50',
+                badge: 'bg-indigo-500/90',
+                icon: '⚖️',
+                textColor: 'text-indigo-700'
+            };
+        default:
+            return {
+                color: 'border-l-slate-400 bg-slate-50/80 border-slate-100/50',
+                badge: 'bg-slate-500/90',
+                icon: '📋',
+                textColor: 'text-slate-700'
+            };
+    }
+};
 
-        groups[monthKey].push(event)
-        return groups
-    }, {} as Record<string, ScheduleEvent[]>)
-}
+export const sampleEvents: ScheduleEvent[] = [
+    {
+        id: 1,
+        title: 'Team Meeting',
+        date: '2025-09-10',
+        type: 'meeting',
+        description: 'Weekly team sync to discuss project progress and upcoming deliverables'
+    },
+    {
+        id: 2,
+        title: 'Project Deadline',
+        date: '2025-09-15',
+        type: 'deadline',
+        description: 'Final submission for the Q3 marketing campaign'
+    },
+    {
+        id: 3,
+        title: 'Client Presentation',
+        date: '2025-09-20',
+        type: 'appointment',
+        description: 'Presenting the new product features to key stakeholders'
+    }
+];

@@ -1,126 +1,269 @@
-import React from 'react'
-import { Upload, FileText } from 'lucide-react'
+import React from 'react';
+import { FileText, ArrowRight, CheckCircle } from 'lucide-react';
+import { InputMethod } from '../types';
 
 interface FileUploadProps {
-    file: File | null
-    manualText: string
-    isProcessing: boolean
-    onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-    onManualTextChange: (text: string) => void
-    onProcessFile: () => void
-    onProcessText: () => void
+    file: File | null;
+    setFile: (file: File | null) => void;
+    isProcessing: boolean;
+    inputMethod: InputMethod;
+    setInputMethod: (method: InputMethod) => void;
+    manualText: string;
+    setManualText: (text: string) => void;
+    processFile: () => void;
+    processManualText: () => void;
+    showModal: (type: any, title: string, message: string, details?: string[]) => void;
+    loadSampleData: () => void;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({
-                                                          file,
-                                                          manualText,
-                                                          isProcessing,
-                                                          onFileChange,
-                                                          onManualTextChange,
-                                                          onProcessFile,
-                                                          onProcessText,
-                                                      }) => (
-    <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-        {/* Primary PDF Upload Section */}
-        <div className="text-center mb-8">
-            <FileText className="mx-auto h-16 w-16 text-blue-500 mb-4" />
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">📄 Upload your PDF syllabus</h2>
-            <p className="text-gray-600 mb-6">Primary method - Best results with PDF files</p>
+const FileUpload: React.FC<FileUploadProps> = ({
+                                                   file,
+                                                   setFile,
+                                                   isProcessing,
+                                                   inputMethod,
+                                                   setInputMethod,
+                                                   manualText,
+                                                   setManualText,
+                                                   processFile,
+                                                   processManualText,
+                                                   showModal,
+                                                   loadSampleData
+                                               }) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile?.type === 'application/pdf') {
+            setFile(selectedFile);
+        } else {
+            showModal(
+                'warning',
+                'Invalid File Type',
+                'Please upload a PDF file.',
+                [
+                    'Only PDF files are supported',
+                    'Convert your document to PDF first',
+                    'Or use manual text input'
+                ]
+            );
+            // Reset file input
+            e.target.value = '';
+        }
+    };
 
-            <input
-                type="file"
-                accept=".pdf"
-                onChange={onFileChange}
-                className="hidden"
-                id="file-upload"
-            />
+    return (
+        <div className="bg-white/95 backdrop-blur-xl text-gray-900 rounded-2xl shadow-2xl border border-white/20 ring-1 ring-white/20 overflow-hidden max-w-4xl mx-auto">
+            {/* Compact Header with Toggle */}
+            <div className="px-6 py-4 bg-gradient-to-r from-gray-50/80 to-white/90 border-b border-gray-100/50">
+                <div className="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 className="text-xl font-light text-gray-900 mb-1">Upload Document</h2>
+                        <p className="text-sm text-gray-600">Extract events from any schedule or document</p>
+                    </div>
 
-            <label
-                htmlFor="file-upload"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors text-lg font-semibold shadow-lg"
-            >
-                <Upload className="h-5 w-5" />
-                Choose PDF File
-            </label>
-
-            {file && (
-                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-green-700 font-semibold mb-3">
-                        ✅ PDF Ready: {file.name}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                        File size: {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    <button
-                        onClick={onProcessFile}
-                        disabled={isProcessing}
-                        className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors font-semibold shadow-lg text-lg"
-                    >
-                        {isProcessing ? '🔄 Processing PDF...' : '🚀 Extract from PDF'}
-                    </button>
+                    {/* Method Toggle */}
+                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                        <button
+                            onClick={() => setInputMethod('file')}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 ${
+                                inputMethod === 'file'
+                                    ? 'bg-white shadow text-gray-900'
+                                    : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            <FileText className="h-3 w-3 inline mr-1" />
+                            PDF File
+                        </button>
+                        <button
+                            onClick={() => setInputMethod('text')}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 ${
+                                inputMethod === 'text'
+                                    ? 'bg-white shadow text-gray-900'
+                                    : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            <FileText className="h-3 w-3 inline mr-1" />
+                            Manual Text
+                        </button>
+                    </div>
                 </div>
-            )}
-        </div>
-
-        {/* Divider */}
-        <div className="relative mb-8">
-            <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500 font-medium">Alternative method</span>
-            </div>
-        </div>
 
-        {/* Secondary Manual Text Section */}
-        <div className="text-center">
-            <h3 className="text-lg font-semibold mb-3 text-gray-700">📝 Or paste syllabus text manually</h3>
-            <p className="text-sm text-gray-500 mb-4">If PDF extraction doesn't work</p>
+            <div className="p-6">
+                {inputMethod === 'file' ? (
+                    /* PDF Upload */
+                    <div className="max-h-fit overflow-hidden">
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100/50">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Upload PDF Document</h3>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Upload any document with dates and events for automatic extraction
+                                </p>
+                            </div>
+                        </div>
 
-            <textarea
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none text-sm"
-                placeholder="Copy and paste your syllabus text here as backup option..."
-                value={manualText}
-                onChange={(e) => onManualTextChange(e.target.value)}
-            />
+                        <div>
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                id="file-upload"
+                            />
 
-            {manualText.length > 20 && (
-                <div className="mt-3">
-                    <p className="text-sm text-gray-600 mb-2">
-                        Text length: {manualText.length} characters
-                    </p>
-                    <button
-                        onClick={onProcessText}
-                        disabled={isProcessing}
-                        className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 transition-colors"
-                    >
-                        {isProcessing ? '🔄 Processing...' : 'Process Manual Text'}
-                    </button>
-                </div>
-            )}
-        </div>
-
-        {/* Processing Status */}
-        {isProcessing && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="text-blue-700 font-medium">
-                        {file ? 'Extracting text from PDF and analyzing...' : 'Analyzing text with AI...'}
+                            {!file ? (
+                                <label
+                                    htmlFor="file-upload"
+                                    className="group relative block w-full p-15 border-2 border-dashed border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50/50 cursor-pointer transition-all duration-300"
+                                >
+                                    <div className="text-center">
+                                        <FileText className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors" />
+                                        <span className="block text-base font-medium text-gray-900 mb-1.5">
+                      Choose PDF file
                     </span>
+                                        <span className="block text-base text-gray-500">
+                      Up to 50MB • Works with schedules, contracts, timelines
+                    </span>
+                                    </div>
+                                </label>
+                            ) : (
+                                <div className="group relative block w-full p-12 border-2 bg-emerald-50/80 border-emerald-200/50 rounded-xl transition-all duration-300 box-border">
+                                    <div className="text-center">
+                                        <CheckCircle className="mx-auto h-6 w-6 text-emerald-600 mb-2" />
+                                        <span className="block text-sm font-medium text-emerald-900 mb-1 truncate">
+                      {file.name}
+                    </span>
+                                        <span className="block text-s text-emerald-700 mb-3">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to process
+                    </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setFile(null);
+                                                // Reset file input
+                                                const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+                                                if (fileInput) fileInput.value = '';
+                                            }}
+                                            className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-white/50 rounded-lg transition-all duration-200 font-medium border border-gray-300"
+                                        >
+                                            Remove
+                                        </button>
+
+                                        <button
+                                            onClick={processFile}
+                                            disabled={isProcessing}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                        >
+                                            {isProcessing ? (
+                                                <>
+                                                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Parse PDF
+                                                    <ArrowRight className="h-3 w-3" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    /* Manual Text */
+                    <div>
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100/50">
+                                <FileText className="h-5 w-5 text-gray-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Paste Text Content</h3>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Copy and paste any text with dates and events for processing
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+              <textarea
+                  className="w-full h-54 p-3 border-2 border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                  placeholder="Paste any document text with dates and events here..."
+                  value={manualText}
+                  onChange={(e) => setManualText(e.target.value)}
+              />
+
+                            {manualText.length > 20 && (
+                                <div className="mt-3">
+                                    <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      {manualText.length} characters ready
+                    </span>
+
+                                        <button
+                                            onClick={processManualText}
+                                            disabled={isProcessing}
+                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all duration-200"
+                                        >
+                                            {isProcessing ? (
+                                                <>
+                                                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Parse Text
+                                                    <ArrowRight className="h-3 w-3" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Tips and Demo */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                    <div className="flex items-start justify-between gap-6">
+                        {/* Tips */}
+                        <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 mb-3 text-sm">Tips for best results</h4>
+                            <ul className="space-y-2 text-sm text-gray-700">
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                    Use text-based documents (not scanned images)
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                    Works with schedules, contracts, timelines, agendas
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                    Files under 10MB process faster and more reliably
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Demo Button */}
+                        <div className="flex-shrink-0">
+                            <button
+                                onClick={loadSampleData}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200"
+                            >
+                                Try Demo
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        )}
-
-        {/* Tips */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold text-gray-700 mb-2">💡 Tips for best results:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Use text-based PDFs (not scanned images)</li>
-                <li>• Files under 10MB work best</li>
-                <li>• Make sure PDF contains dates and assignment information</li>
-                <li>• If PDF fails, try copy-pasting text manually</li>
-            </ul>
         </div>
-    </div>
-)
+    );
+};
+
+export default FileUpload;

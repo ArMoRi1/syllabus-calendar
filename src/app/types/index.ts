@@ -77,3 +77,39 @@ export const EVENT_CATEGORIES = {
         keywords: ['reminder', 'note', 'follow-up', 'check', 'update', 'report', 'analysis']
     }
 } as const;
+
+
+export interface ScheduleEvent {
+    id: number;
+    title: string;
+    date: string;
+    type: 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other';
+    description?: string;
+    originalDate?: string;
+}
+
+export type ViewMode = 'calendar' | 'list';
+
+export type InputMethod = 'file' | 'text';
+
+export interface ProcessingResult {
+    success: boolean;
+    events?: ScheduleEvent[];
+    error?: string;
+    debug?: {
+        textLength?: number;
+        eventsFound?: number;
+    };
+}
+
+export type ModalType = 'error' | 'warning' | 'info' | 'success';
+
+export interface ModalState {
+    isOpen: boolean;
+    type: ModalType;
+    title: string;
+    message: string;
+    details?: string[];
+    onConfirm?: () => void;
+    confirmText?: string;
+}
