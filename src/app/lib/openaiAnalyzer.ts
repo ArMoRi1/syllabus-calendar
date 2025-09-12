@@ -2,28 +2,27 @@
 
 import { OpenAI } from 'openai'
 
-// Універсальний regex екстрактор для будь-яких документів
+// Universal regex extractor for any documents
 function extractDatesWithRegex(text: string): any[] {
-    console.log('🔍 Using regex fallback extraction...');
     const events = [];
     const lines = text.split(/[\n\r]+/);
 
-    // Універсальні паттерни для дат
+    // Universal date patterns
     const datePatterns = [
-        // Повні дати з роками
+        // Full dates with years
         /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
         /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/gi,
-        // Дати без року
+        // Dates without year
         /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?/gi,
         /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?/gi,
-        // Числові формати
+        // Numeric formats
         /\d{1,2}\/\d{1,2}\/\d{2,4}/g,
         /\d{4}-\d{2}-\d{2}/g,
         /\d{1,2}\.\d{1,2}\.\d{2,4}/g,
         /\d{1,2}\/\d{1,2}/g,
     ];
 
-    // Універсальні ключові слова для типів подій
+    // Universal keywords for event types
     const eventKeywords = {
         meeting: ['meeting', 'call', 'conference', 'discussion', 'interview', 'consultation', 'sync', 'standup', 'session', 'gathering', 'assembly'],
         deadline: ['deadline', 'due', 'submit', 'submission', 'final', 'expires', 'last day', 'cutoff', 'close', 'ends', 'expiry', 'maturity'],
@@ -37,13 +36,13 @@ function extractDatesWithRegex(text: string): any[] {
     function parseDate(dateStr: string): Date | null {
         const currentYear = new Date().getFullYear();
 
-        // Спробуємо стандартний парсінг
+        // Try standard parsing
         let date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
             return date;
         }
 
-        // Якщо немає року, додаємо його
+        // If no year, add it
         const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
             'july', 'august', 'september', 'october', 'november', 'december'];
 
@@ -56,9 +55,9 @@ function extractDatesWithRegex(text: string): any[] {
                     const month = i;
                     const day = parseInt(dayMatch[0]);
 
-                    // Визначаємо рік: вересень-грудень = поточний рік, січень-серпень = наступний рік
+                    // Determine year: September-December = current year, January-August = next year
                     let year = currentYear;
-                    if (month >= 0 && month <= 7) { // січень-серпень
+                    if (month >= 0 && month <= 7) { // January-August
                         year = currentYear + 1;
                     }
 
@@ -86,7 +85,7 @@ function extractDatesWithRegex(text: string): any[] {
                 const date = parseDate(dateStr);
 
                 if (date && !isNaN(date.getTime())) {
-                    // Визначаємо тип події
+                    // Determine event type
                     let eventType = 'other';
                     const lowerLine = line.toLowerCase();
 
@@ -97,7 +96,7 @@ function extractDatesWithRegex(text: string): any[] {
                         }
                     }
 
-                    // Витягуємо назву події
+                    // Extract event title
                     const beforeDate = line.substring(0, match.index).trim();
                     const afterDate = line.substring(match.index! + match[0].length).trim();
 
@@ -110,7 +109,7 @@ function extractDatesWithRegex(text: string): any[] {
                         title = `${beforeDate} ${afterDate}`.trim();
                     }
 
-                    // Очищаємо назву
+                    // Clean title
                     title = title
                         .replace(/^\W+|\W+$/g, '')
                         .replace(/\s+/g, ' ')
@@ -129,16 +128,12 @@ function extractDatesWithRegex(text: string): any[] {
         }
     }
 
-    console.log(`📅 Regex extraction found ${events.length} events`);
     return events;
 }
 
-// Головна функція аналізу з OpenAI - тепер універсальна
+// Main analysis function with OpenAI - now universal
 export async function analyzeTextWithOpenAI(text: string) {
-    console.log(`🤖 Starting OpenAI analysis of ${text.length} characters`);
-
     if (!process.env.OPENAI_API_KEY) {
-        console.warn('⚠️ OPENAI_API_KEY not configured, using regex fallback');
         return extractDatesWithRegex(text);
     }
 
@@ -146,7 +141,7 @@ export async function analyzeTextWithOpenAI(text: string) {
         apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // УНІВЕРСАЛЬНИЙ СИСТЕМНИЙ ПРОМПТ ДЛЯ БУДЬ-ЯКИХ ДОКУМЕНТІВ
+    // UNIVERSAL SYSTEM PROMPT FOR ANY DOCUMENTS
     const systemPrompt = `You are an expert at extracting ALL dates and events from any type of document - legal documents, contracts, schedules, timelines, project plans, court filings, business agreements, academic syllabi, etc.
 
 CRITICAL REQUIREMENTS:
@@ -191,14 +186,12 @@ Return ONLY valid JSON in this exact format:
 {"events": [{"title": "Read: Handbook Chapters 25-28, pages 181-206", "date": "2025-01-17", "type": "task", "description": "Reading assignment for Legal Writing course"}]}`;
 
     try {
-        // Розбиваємо довгий текст на частини якщо потрібно
+        // Split long text into chunks if needed
         const MAX_CHUNK_SIZE = 80000;
         const textChunks = [];
 
         if (text.length > MAX_CHUNK_SIZE) {
-            console.log(`📄 Text too long (${text.length}), splitting into chunks...`);
-
-            // Розбиваємо по параграфах/рядках, щоб зберегти контекст
+            // Split by paragraphs/lines to preserve context
             const paragraphs = text.split(/\n\s*\n/);
             let currentChunk = '';
 
@@ -218,16 +211,13 @@ Return ONLY valid JSON in this exact format:
             textChunks.push(text);
         }
 
-        console.log(`📄 Processing ${textChunks.length} text chunk(s)`);
-
         const allEvents = [];
 
-        // Обробляємо кожну частину
+        // Process each chunk
         for (let i = 0; i < textChunks.length; i++) {
             const chunk = textChunks[i];
-            console.log(`🔄 Processing chunk ${i + 1}/${textChunks.length} (${chunk.length} chars)`);
 
-            // Аналізуємо структуру документа для кращого контексту
+            // Analyze document structure for better context
             const hasLegalTerms = /court|hearing|trial|motion|brief|contract|agreement|settlement/i.test(chunk);
             const hasBusinessTerms = /meeting|deadline|milestone|deliverable|payment|invoice/i.test(chunk);
             const hasAcademicTerms = /assignment|exam|quiz|lecture|reading|chapter/i.test(chunk);
@@ -273,11 +263,9 @@ Return ONLY valid JSON in this exact format:
                     const parsedData = JSON.parse(content.trim());
 
                     if (parsedData.events && Array.isArray(parsedData.events)) {
-                        console.log(`✅ Chunk ${i + 1} found ${parsedData.events.length} events`);
-
-                        // Додаємо події та намагаємось зберегти оригінальні назви
+                        // Add events and try to preserve original names
                         parsedData.events.forEach((event: any) => {
-                            // Нормалізуємо тип події
+                            // Normalize event type
                             const validTypes = ['meeting', 'deadline', 'event', 'appointment', 'task', 'legal', 'other'];
                             if (!validTypes.includes(event.type)) {
                                 event.type = 'other';
@@ -288,16 +276,16 @@ Return ONLY valid JSON in this exact format:
                     }
                 }
             } catch (chunkError) {
-                console.error(`❌ Error processing chunk ${i + 1}:`, chunkError);
+                // Silent error handling for individual chunks
             }
 
-            // Невеликий delay між запитами
+            // Small delay between requests
             if (i < textChunks.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
 
-        // Видаляємо дублікати та сортуємо
+        // Remove duplicates and sort
         const uniqueEvents = [];
         const seen = new Set();
 
@@ -309,39 +297,19 @@ Return ONLY valid JSON in this exact format:
             }
         }
 
-        // Сортуємо по датах
+        // Sort by dates
         uniqueEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        console.log(`✅ OpenAI analysis complete: ${uniqueEvents.length} unique events found`);
-
-        // Логуємо діапазон дат та типи подій для перевірки
-        if (uniqueEvents.length > 0) {
-            const firstDate = uniqueEvents[0].date;
-            const lastDate = uniqueEvents[uniqueEvents.length - 1].date;
-            console.log(`📅 Date range: ${firstDate} to ${lastDate}`);
-
-            const typeCounts = uniqueEvents.reduce((acc, event) => {
-                acc[event.type] = (acc[event.type] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>);
-            console.log(`📊 Event types:`, typeCounts);
-        }
 
         return uniqueEvents;
 
     } catch (error) {
-        console.error('❌ OpenAI analysis failed:', error);
-
-        // Fallback до regex
-        console.log('🔄 Falling back to regex extraction...');
+        // Fallback to regex
         const fallbackEvents = extractDatesWithRegex(text);
 
         if (fallbackEvents.length > 0) {
-            console.log(`✅ Regex fallback found ${fallbackEvents.length} events`);
             return fallbackEvents;
         }
 
-        console.log('❌ Both OpenAI and regex failed, returning empty array');
         return [];
     }
 }
