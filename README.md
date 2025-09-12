@@ -5,7 +5,7 @@ A smart web application that automatically converts syllabus documents into orga
 ## Live Demo
 
 **Deployed App:** [Your Vercel URL here]  
-**GitHub Repository:** [Your GitHub repo URL here]
+**GitHub Repository:** https://github.com/ArMoRi1/syllabus-calendar/
 
 ## Features
 
@@ -58,7 +58,7 @@ Before running this project, make sure you have:
 
 ### 1. Clone the Repository
 ```bash
-git clone [your-repo-url]
+git clone https://github.com/ArMoRi1/syllabus-calendar/
 cd syllabus-calendar
 ```
 
@@ -231,8 +231,8 @@ This project was created for the LawBandit internship challenge. Please respect 
 
 ## Contact
 
-**Developer**: [Your Name]  
-**Email**: [Your Email]  
+**Developer**: Artem Mochalov  
+**Email**: artemmochalov445@gmail.com  
 **Contest Submission**: LawBandit Internship Challenge - Syllabus Calendar Feature
 
 ---
