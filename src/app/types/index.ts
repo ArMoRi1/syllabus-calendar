@@ -10,8 +10,6 @@ export interface ScheduleEvent {
 
 export type EventType = 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other'
 
-export type ViewMode = 'calendar' | 'list'
-
 export interface EventStyle {
     color: string
     badge: string
@@ -24,11 +22,12 @@ export interface ProcessingResult {
     events?: ScheduleEvent[]
     error?: string
     debug?: {
-        textLength?: number
-        eventsFound?: number
-        fileSize?: number
-        bufferSize?: number
-        extractedLength?: number
+        textLength?: number;
+        eventsFound?: number;
+        fileSize?: number;
+        bufferSize?: number;
+        extractedLength?: number;
+        processingMethod?: string;
     }
     details?: string[]
     stack?: string
@@ -92,15 +91,6 @@ export type ViewMode = 'calendar' | 'list';
 
 export type InputMethod = 'file' | 'text';
 
-export interface ProcessingResult {
-    success: boolean;
-    events?: ScheduleEvent[];
-    error?: string;
-    debug?: {
-        textLength?: number;
-        eventsFound?: number;
-    };
-}
 
 export type ModalType = 'error' | 'warning' | 'info' | 'success';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, AlertTriangle, Check, Info, X } from 'lucide-react';
-import { ModalState, ModalType } from '../types';
+import { ModalState, ModalType } from '../../types';
 
 interface NotificationModalProps extends ModalState {
     onClose: () => void;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, RotateCcw } from 'lucide-react';
-import { ScheduleEvent } from '../types';
+import { ScheduleEvent } from '../../types';
 
 interface DateEditorProps {
     event: ScheduleEvent;

@@ -62,13 +62,7 @@ async function extractWithPdfParse(buffer: Buffer): Promise<PDFExtractionResult>
         // Dynamic import of pdf-parse
         const pdfParse = await import('pdf-parse');
 
-        const options = {
-            // Settings for better text extraction
-            normalizeWhitespace: false,
-            disableCombineTextItems: false,
-        };
-
-        const data = await pdfParse.default(buffer, options);
+        const data = await pdfParse.default(buffer);
 
         return {
             text: data.text,

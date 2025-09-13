@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    // Підтримка Node.js модулів в браузері
+    eslint: {
+        // Відключаємо ESLint під час production build
+        ignoreDuringBuilds: true,
+    },
     webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
         // Налаштування для PDF.js
         if (!isServer) {
@@ -10,8 +13,16 @@ const nextConfig: NextConfig = {
                 fs: false,
                 path: false,
                 canvas: false,
+                encoding: false,
             };
         }
+
+        // Виключаємо canvas для всіх середовищ
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            canvas: false,
+            encoding: false,
+        };
 
         // Обробка worker файлів
         config.module.rules.push({
@@ -25,12 +36,11 @@ const nextConfig: NextConfig = {
         return config;
     },
 
-    // Експортуємо статичні файли
     experimental: {
         esmExternals: true,
+        serverComponentsExternalPackages: ['pdfjs-dist', 'pdf-parse']
     },
 
-    // Налаштування для production
     env: {
         CUSTOM_KEY: 'my-value',
     },

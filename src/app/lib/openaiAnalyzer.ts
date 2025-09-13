@@ -211,7 +211,7 @@ Return ONLY valid JSON in this exact format:
             textChunks.push(text);
         }
 
-        const allEvents = [];
+        const allEvents: any[] = [];
 
         // Process each chunk
         for (let i = 0; i < textChunks.length; i++) {
