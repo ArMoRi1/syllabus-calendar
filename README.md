@@ -127,7 +127,7 @@ syllabus-calendar/
 ├── public/               # Static assets
 ├── package.json         # Dependencies and scripts
 ├── next.config.ts       # Next.js configuration
-├── tailwind.config.js   # Tailwind CSS config
+├── postcss.config.js   # Tailwind CSS config
 └── README.md           # This file
 ```
 
