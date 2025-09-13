@@ -4,7 +4,7 @@ A smart web application that automatically converts syllabus documents into orga
 
 ## Live Demo
 
-**Deployed App:** [Your Vercel URL here]  
+**Deployed App:** https://syllabus-calendar-six.vercel.app/  
 **GitHub Repository:** https://github.com/ArMoRi1/syllabus-calendar/
 
 ## Features
