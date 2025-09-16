@@ -1,8 +1,9 @@
+// src/app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
-import { ScheduleEvent, ViewMode, InputMethod, ProcessingResult, ModalState } from './types';
+import { ScheduleEvent, ViewMode, InputMethod, ProcessingResult, ModalState } from '../types';
 import { getEventStyle, sampleEvents } from '../app/utils/eventHelpers';
 import { exportSingleEvent, exportSelectedToGoogle } from '../app/utils/exportUtils';
 import NotificationModal from '../app/components/SyllabusCalendar/NotificationModal';
@@ -228,7 +229,6 @@ export default function HomePage() {
         setSelectedEvents([]);
         setSelectAll(false);
         setIsSelectionMode(false);
-        setIsSelectionMode(false);
         setHasUnsavedChanges(false);
 
         showModal(
@@ -300,7 +300,7 @@ export default function HomePage() {
                             loadSampleData={loadSampleData}
                         />
                     ) : (
-                        /* Results Section */
+                        /* Results Section - EventList з вбудованим фільтром */
                         <EventList
                             events={events}
                             selectedEvents={selectedEvents}

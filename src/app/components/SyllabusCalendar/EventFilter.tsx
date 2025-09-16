@@ -33,27 +33,27 @@ const EventFilter: React.FC<EventFilterProps> = ({ events, onFilterChange }) => 
         return counts;
     }, [events]);
 
-    // Кольори для категорій (відповідають вашій темі)
+    // categories colours
     const categoryColors: Record<EventType, string> = {
-        meeting: '#3B82F6',    // синій
-        deadline: '#EF4444',   // червоний
-        event: '#10B981',      // зелений
-        appointment: '#8B5CF6', // фіолетовий
-        task: '#F59E0B',       // жовтий/помаранчевий
-        legal: '#6B7280',      // сірий
-        other: '#9CA3AF'       // світло-сірий
+        meeting: '#3B82F6',
+        deadline: '#EF4444',
+        event: '#10B981',
+        appointment: '#8B5CF6',
+        task: '#F59E0B',
+        legal: '#6B7280',
+        other: '#9CA3AF'
     };
 
-    // Фільтрація подій
+    // Event filter
     useEffect(() => {
         let filtered = events;
 
-        // Фільтр по категоріях
+        // Category filter
         if (selectedCategories.size > 0) {
             filtered = filtered.filter(event => selectedCategories.has(event.type));
         }
 
-        // Фільтр по пошуку
+        // Search filter
         if (searchTerm.trim()) {
             const search = searchTerm.toLowerCase();
             filtered = filtered.filter(event =>
