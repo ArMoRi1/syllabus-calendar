@@ -230,7 +230,7 @@ const EventFilter: React.FC<EventFilterProps> = ({ events, onFilterChange }) => 
                                         }
                     `}
                                     >
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0 ">
                                             <div
                                                 className="w-3 h-3 rounded-full flex-shrink-0"
                                                 style={{ backgroundColor: categoryColors[key as EventType] }}

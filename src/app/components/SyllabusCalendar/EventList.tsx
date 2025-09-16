@@ -228,8 +228,8 @@ const EventList: React.FC<EventListProps> = ({
                         onClick={toggleSelectionMode}
                         className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
                             isSelectionMode
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black'
+                                : 'border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black'
                         }`}
                     >
                         {isSelectionMode ? 'Cancel' : 'Select Multiple'}
