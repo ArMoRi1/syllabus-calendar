@@ -467,13 +467,13 @@ const EventList: React.FC<EventListProps> = ({
                                                         <p className="text-sm text-gray-600 font-medium">
                                                             {formatDateDisplay(event.date)}
                                                         </p>
-                                                        <button
-                                                            onClick={() => setEditingEventId(event.id)}
-                                                            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                                                            title="Edit date"
-                                                        >
-                                                            <Edit3 className="h-3 w-3" />
-                                                        </button>
+                                                        {/*<button*/}
+                                                        {/*    onClick={() => setEditingEventId(event.id)}*/}
+                                                        {/*    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"*/}
+                                                        {/*    title="Edit date"*/}
+                                                        {/*>*/}
+                                                        {/*    <Edit3 className="h-3 w-3" />*/}
+                                                        {/*</button>*/}
                                                         <button
                                                             onClick={() => openEditModal(event)}
                                                             className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
