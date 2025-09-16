@@ -235,8 +235,8 @@ const EventList: React.FC<EventListProps> = ({
                         className={`
                             flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
                             ${hasActiveFilters
-                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black'
+                            : 'border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black'
                         }
                         `}
                     >
@@ -263,7 +263,7 @@ const EventList: React.FC<EventListProps> = ({
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search by title, description, or date..."
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                             </div>
                         </div>

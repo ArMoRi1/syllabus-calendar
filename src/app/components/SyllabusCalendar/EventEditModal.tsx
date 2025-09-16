@@ -207,7 +207,7 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
                     <button
                         onClick={handleSave}
                         disabled={!title.trim() || !date}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
                         <Save className="h-4 w-4" />
                         Save Changes
