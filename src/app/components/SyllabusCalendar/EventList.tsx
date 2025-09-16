@@ -1,10 +1,11 @@
 // src/app/components/SyllabusCalendar/EventList.tsx
 import React, { useState, useEffect } from 'react';
-import { Calendar, Edit3, RotateCcw, Filter, X, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
+import { Calendar, Edit3, RotateCcw, Filter, X, ChevronDown, ChevronUp, Search, Download, Edit } from 'lucide-react';
 import { ScheduleEvent, EventType } from '../../types';
 import { getEventStyle } from '../../utils/eventHelpers';
 import { EVENT_CATEGORIES } from '../../types';
 import DateEditor from './DateEditor';
+import EventEditModal from './EventEditModal';
 
 interface EventListProps {
     events: ScheduleEvent[];
@@ -24,6 +25,7 @@ interface EventListProps {
     restoreAllDates: () => void;
     setEditingEventId: (id: number | null) => void;
     resetForm: () => void;
+    updateEvent: (updatedEvent: ScheduleEvent) => void;
 }
 
 const EventList: React.FC<EventListProps> = ({
@@ -44,12 +46,18 @@ const EventList: React.FC<EventListProps> = ({
                                                  restoreAllDates,
                                                  setEditingEventId,
                                                  resetForm,
+                                                 updateEvent,
+                                                 deleteEvent,
                                              }) => {
     // Filter state
     const [filteredEvents, setFilteredEvents] = useState<ScheduleEvent[]>(events);
     const [selectedCategories, setSelectedCategories] = useState<Set<EventType>>(new Set());
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Edit modal state
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
 
     // Update filtered events when events prop changes
     useEffect(() => {
@@ -140,6 +148,23 @@ const EventList: React.FC<EventListProps> = ({
             month: 'long',
             day: 'numeric',
         });
+    };
+
+    // Edit modal handlers
+    const openEditModal = (event: ScheduleEvent) => {
+        console.log('🔧 EventList: Opening edit modal for event:', event);
+        setEditingEvent(event);
+        setEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditModalOpen(false);
+        setEditingEvent(null);
+    };
+
+    const handleUpdateEvent = (updatedEvent: ScheduleEvent) => {
+        updateEvent(updatedEvent);
+        closeEditModal();
     };
 
     return (
@@ -435,6 +460,7 @@ const EventList: React.FC<EventListProps> = ({
                                                         currentDate={event.date}
                                                         onSave={(newDate) => saveEventDate(event.id, newDate)}
                                                         onCancel={() => setEditingEventId(null)}
+                                                        originalDate={event.originalDate}
                                                     />
                                                 ) : (
                                                     <div className="flex items-center gap-2">
@@ -447,6 +473,13 @@ const EventList: React.FC<EventListProps> = ({
                                                             title="Edit date"
                                                         >
                                                             <Edit3 className="h-3 w-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => openEditModal(event)}
+                                                            className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Edit event"
+                                                        >
+                                                            <Edit className="h-3 w-3" />
                                                         </button>
                                                         {isModified && (
                                                             <button
@@ -494,6 +527,14 @@ const EventList: React.FC<EventListProps> = ({
                     </div>
                 )}
             </div>
+
+            {/* Edit Modal */}
+            <EventEditModal
+                event={editingEvent}
+                isOpen={editModalOpen}
+                onClose={closeEditModal}
+                onSave={handleUpdateEvent}
+            />
         </div>
     );
 };

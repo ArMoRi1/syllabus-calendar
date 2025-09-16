@@ -247,6 +247,22 @@ export default function HomePage() {
         exportSingleEvent(event);
     };
 
+    // Event update and delete functions
+    const updateEvent = (updatedEvent: ScheduleEvent) => {
+        setEvents(prevEvents =>
+            prevEvents.map(event =>
+                event.id === updatedEvent.id ? updatedEvent : event
+            )
+        );
+        setHasUnsavedChanges(true);
+    };
+
+    const deleteEvent = (eventId: number) => {
+        setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+        setSelectedEvents(prevSelected => prevSelected.filter(id => id !== eventId));
+        setHasUnsavedChanges(true);
+    };
+
     return (
         <div className="h-screen text-white relative overflow-hidden" style={{ backgroundColor: '#161513' }}>
             {/* Background patterns */}
@@ -319,6 +335,8 @@ export default function HomePage() {
                             restoreAllDates={restoreAllDates}
                             setEditingEventId={setEditingEventId}
                             resetForm={resetForm}
+                            updateEvent={updateEvent}
+                            deleteEvent={deleteEvent}
                         />
                     )}
                 </div>
