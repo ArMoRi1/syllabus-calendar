@@ -196,21 +196,7 @@ const EventList: React.FC<EventListProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Filter toggle */}
-                    <button
-                        onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                        className={`
-                            flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                            ${hasActiveFilters
-                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }
-                        `}
-                    >
-                        <Filter className="h-4 w-4" />
-                        Filter
-                        {isFilterExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
+
 
                     {/* Selection mode toggle */}
                     <button
@@ -221,7 +207,7 @@ const EventList: React.FC<EventListProps> = ({
                                 : 'border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black'
                         }`}
                     >
-                        {isSelectionMode ? 'Cancel' : 'Select Multiple'}
+                        {isSelectionMode ? 'Cancel Multiple' : 'Select Multiple'}
                     </button>
 
                     {/* Clear filters */}
@@ -238,12 +224,26 @@ const EventList: React.FC<EventListProps> = ({
                     {/* Parse Another Button - Now always visible near filter */}
                     <button
                         onClick={resetForm}
-                        className="px-3 py-2 text-sm font-medium rounded-lg transition-all border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black"
+                        className="px-3 py-2 text-sm font-medium rounded-lg transition-all border-2 border-gray-900 bg-gray-900 text-white hover:bg-red-400 hover:text-black"
                     >
                         Parse Another
                     </button>
 
-
+                    {/* Filter toggle */}
+                    <button
+                        onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                        className={`
+                            flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                            ${hasActiveFilters
+                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }
+                        `}
+                    >
+                        <Filter className="h-4 w-4" />
+                        Filter
+                        {isFilterExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
                 </div>
             </div>
 
@@ -369,7 +369,7 @@ const EventList: React.FC<EventListProps> = ({
                         </div>
                     )}
 
-                    {/* Action buttons - Without Parse Another */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-2">
                         {hasUnsavedChanges && (
                             <button
@@ -384,7 +384,7 @@ const EventList: React.FC<EventListProps> = ({
                         {isSelectionMode && selectedEvents.length > 0 && (
                             <button
                                 onClick={exportSelectedToGoogle}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                className="flex items-center gap-1 px-3 py-1.5 border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black text-sm font-medium rounded-lg transition-colors"
                             >
                                 <Download className="h-3 w-3" />
                                 Export Selected
