@@ -212,17 +212,6 @@ const EventList: React.FC<EventListProps> = ({
                         {isFilterExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
 
-                    {/* Clear filters */}
-                    {hasActiveFilters && (
-                        <button
-                            onClick={clearAllFilters}
-                            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <X className="h-4 w-4" />
-                            Clear
-                        </button>
-                    )}
-
                     {/* Selection mode toggle */}
                     <button
                         onClick={toggleSelectionMode}
@@ -234,6 +223,27 @@ const EventList: React.FC<EventListProps> = ({
                     >
                         {isSelectionMode ? 'Cancel' : 'Select Multiple'}
                     </button>
+
+                    {/* Clear filters */}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearAllFilters}
+                            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                            Clear
+                        </button>
+                    )}
+
+                    {/* Parse Another Button - Now always visible near filter */}
+                    <button
+                        onClick={resetForm}
+                        className="px-3 py-2 text-sm font-medium rounded-lg transition-all border-2 border-gray-900 bg-gray-900 text-white hover:bg-white hover:text-black"
+                    >
+                        Parse Another
+                    </button>
+
+
                 </div>
             </div>
 
@@ -332,7 +342,7 @@ const EventList: React.FC<EventListProps> = ({
                 </div>
             )}
 
-            {/* Controls Bar */}
+            {/* Controls Bar - Now only shows when needed and without Parse Another */}
             {(isSelectionMode || hasUnsavedChanges) && (
                 <div className="flex items-center justify-between p-4 bg-gray-50/50 border-b border-gray-100">
                     {/* Selection controls */}
@@ -359,7 +369,7 @@ const EventList: React.FC<EventListProps> = ({
                         </div>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Action buttons - Without Parse Another */}
                     <div className="flex items-center gap-2">
                         {hasUnsavedChanges && (
                             <button
@@ -380,13 +390,6 @@ const EventList: React.FC<EventListProps> = ({
                                 Export Selected
                             </button>
                         )}
-
-                        <button
-                            onClick={resetForm}
-                            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            Parse Another
-                        </button>
                     </div>
                 </div>
             )}
@@ -467,13 +470,6 @@ const EventList: React.FC<EventListProps> = ({
                                                         <p className="text-sm text-gray-600 font-medium">
                                                             {formatDateDisplay(event.date)}
                                                         </p>
-                                                        {/*<button*/}
-                                                        {/*    onClick={() => setEditingEventId(event.id)}*/}
-                                                        {/*    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"*/}
-                                                        {/*    title="Edit date"*/}
-                                                        {/*>*/}
-                                                        {/*    <Edit3 className="h-3 w-3" />*/}
-                                                        {/*</button>*/}
                                                         <button
                                                             onClick={() => openEditModal(event)}
                                                             className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
