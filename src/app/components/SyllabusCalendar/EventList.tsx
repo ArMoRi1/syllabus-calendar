@@ -25,6 +25,7 @@ interface EventListProps {
     setEditingEventId: (id: number | null) => void;
     resetForm: () => void;
     updateEvent: (updatedEvent: ScheduleEvent) => void;
+    deleteEvent: (eventId: number) => void;
 }
 
 const EventList: React.FC<EventListProps> = ({
@@ -195,8 +196,6 @@ const EventList: React.FC<EventListProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-
-
                     {/* Selection mode toggle */}
                     <button
                         onClick={toggleSelectionMode}
@@ -220,7 +219,7 @@ const EventList: React.FC<EventListProps> = ({
                         </button>
                     )}
 
-                    {/* Parse Another Button - Now always visible near filter */}
+                    {/* Parse Another Button */}
                     <button
                         onClick={resetForm}
                         className="px-3 py-2 text-sm font-medium rounded-lg transition-all border-2 border-gray-900 bg-gray-900 text-white hover:bg-red-400 hover:text-black"
@@ -457,27 +456,27 @@ const EventList: React.FC<EventListProps> = ({
 
                                             {/* Date Display/Editor */}
                                             <div className="mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-sm text-gray-600 font-medium">
-                                                            {formatDateDisplay(event.date)}
-                                                        </p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm text-gray-600 font-medium">
+                                                        {formatDateDisplay(event.date)}
+                                                    </p>
+                                                    <button
+                                                        onClick={() => openEditModal(event)}
+                                                        className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                        title="Edit event"
+                                                    >
+                                                        <Edit className="h-3 w-3" />
+                                                    </button>
+                                                    {isModified && (
                                                         <button
-                                                            onClick={() => openEditModal(event)}
-                                                            className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                            title="Edit event"
+                                                            onClick={() => restoreEventDate(event.id)}
+                                                            className="p-1 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                                                            title="Restore original date"
                                                         >
-                                                            <Edit className="h-3 w-3" />
+                                                            <RotateCcw className="h-3 w-3" />
                                                         </button>
-                                                        {isModified && (
-                                                            <button
-                                                                onClick={() => restoreEventDate(event.id)}
-                                                                className="p-1 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                                                                title="Restore original date"
-                                                            >
-                                                                <RotateCcw className="h-3 w-3" />
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Description */}

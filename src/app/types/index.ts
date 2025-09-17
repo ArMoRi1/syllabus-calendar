@@ -1,26 +1,31 @@
 // types/index.ts
 
 export interface ScheduleEvent {
-    id: number
-    title: string
-    date: string
-    type: EventType
-    description?: string
+    id: number;
+    title: string;
+    date: string;
+    type: EventType;
+    description?: string;
+    // Original values for restore functionality
+    originalDate?: string;
+    originalTitle?: string;
+    originalType?: EventType;
+    originalDescription?: string;
 }
 
-export type EventType = 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other'
+export type EventType = 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other';
 
 export interface EventStyle {
-    color: string
-    badge: string
-    icon: string
-    textColor: string
+    color: string;
+    badge: string;
+    icon: string;
+    textColor: string;
 }
 
 export interface ProcessingResult {
-    success: boolean
-    events?: ScheduleEvent[]
-    error?: string
+    success: boolean;
+    events?: ScheduleEvent[];
+    error?: string;
     debug?: {
         textLength?: number;
         eventsFound?: number;
@@ -28,14 +33,14 @@ export interface ProcessingResult {
         bufferSize?: number;
         extractedLength?: number;
         processingMethod?: string;
-    }
-    details?: string[]
-    stack?: string
+    };
+    details?: string[];
+    stack?: string;
 }
 
 export interface ExtractionMethod {
-    name: string
-    method: () => Promise<string>
+    name: string;
+    method: () => Promise<string>;
 }
 
 // Категории событий с описаниями
@@ -77,20 +82,9 @@ export const EVENT_CATEGORIES = {
     }
 } as const;
 
-
-export interface ScheduleEvent {
-    id: number;
-    title: string;
-    date: string;
-    type: 'meeting' | 'deadline' | 'event' | 'appointment' | 'task' | 'legal' | 'other';
-    description?: string;
-    originalDate?: string;
-}
-
 export type ViewMode = 'calendar' | 'list';
 
 export type InputMethod = 'file' | 'text';
-
 
 export type ModalType = 'error' | 'warning' | 'info' | 'success';
 

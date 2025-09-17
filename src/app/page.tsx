@@ -41,41 +41,79 @@ export default function HomePage() {
         setIsClient(true);
     }, []);
 
+    // Helper function to check if there are any unsaved changes
+    const checkHasUnsavedChanges = (eventsList: ScheduleEvent[]) => {
+        return eventsList.some(event =>
+            (event.originalDate && event.originalDate !== event.date) ||
+            (event.originalTitle && event.originalTitle !== event.title) ||
+            (event.originalType && event.originalType !== event.type) ||
+            (event.originalDescription && event.originalDescription !== event.description)
+        );
+    };
+
+    // Update the hasUnsavedChanges whenever events change
+    useEffect(() => {
+        setHasUnsavedChanges(checkHasUnsavedChanges(events));
+    }, [events]);
+
     // Event management functions
     const saveEventDate = (eventId: number, newDate: string) => {
+        console.log('💾 Saving event date:', eventId, newDate);
         setEvents(prevEvents =>
             prevEvents.map(event => {
                 if (event.id === eventId) {
                     const originalDate = event.originalDate || event.date;
+                    console.log('💾 Event originalDate:', originalDate, 'newDate:', newDate);
                     return { ...event, date: newDate, originalDate };
                 }
                 return event;
             })
         );
         setEditingEventId(null);
-        setHasUnsavedChanges(true);
+        // hasUnsavedChanges будет обновлен автоматически через useEffect
     };
 
     const restoreAllDates = () => {
-        setEvents(prevEvents =>
-            prevEvents.map(event => ({
+        setEvents(prevEvents => {
+            const restored = prevEvents.map(event => ({
                 ...event,
-                date: event.originalDate || event.date
-            }))
-        );
-        setHasUnsavedChanges(false);
+                date: event.originalDate || event.date,
+                title: event.originalTitle || event.title,
+                type: event.originalType || event.type,
+                description: event.originalDescription || event.description,
+                // Clear all original values after restoring
+                originalDate: undefined,
+                originalTitle: undefined,
+                originalType: undefined,
+                originalDescription: undefined
+            }));
+            return restored;
+        });
+        // hasUnsavedChanges будет обновлен автоматически через useEffect
     };
 
     const restoreEventDate = (eventId: number) => {
-        setEvents(prevEvents =>
-            prevEvents.map(event => {
-                if (event.id === eventId && event.originalDate) {
-                    return { ...event, date: event.originalDate };
+        setEvents(prevEvents => {
+            const updatedEvents = prevEvents.map(event => {
+                if (event.id === eventId) {
+                    return {
+                        ...event,
+                        date: event.originalDate || event.date,
+                        title: event.originalTitle || event.title,
+                        type: event.originalType || event.type,
+                        description: event.originalDescription || event.description,
+                        // Clear original values for this event
+                        originalDate: undefined,
+                        originalTitle: undefined,
+                        originalType: undefined,
+                        originalDescription: undefined
+                    };
                 }
                 return event;
-            })
-        );
-        setHasUnsavedChanges(false);
+            });
+            return updatedEvents;
+        });
+        // hasUnsavedChanges будет обновлен автоматически через useEffect
     };
 
     // Modal functions
@@ -126,7 +164,7 @@ export default function HomePage() {
                     setSelectedEvents([]);
                     setSelectAll(false);
                     setIsSelectionMode(false);
-                    setHasUnsavedChanges(false);
+                    // hasUnsavedChanges будет установлен в false автоматически
 
                     showModal(
                         'success',
@@ -217,7 +255,7 @@ export default function HomePage() {
         setShowNoEventsModal(false);
         setLastProcessedFile('');
         setEditingEventId(null);
-        setHasUnsavedChanges(false);
+        // hasUnsavedChanges будет установлен в false автоматически
 
         // Reset file input
         const fileInput = document.getElementById('file-upload') as HTMLInputElement;
@@ -229,7 +267,7 @@ export default function HomePage() {
         setSelectedEvents([]);
         setSelectAll(false);
         setIsSelectionMode(false);
-        setHasUnsavedChanges(false);
+        // hasUnsavedChanges будет установлен в false автоматически
 
         showModal(
             'info',
@@ -247,20 +285,39 @@ export default function HomePage() {
         exportSingleEvent(event);
     };
 
-    // Event update and delete functions
+    // Event update and delete functions - Enhanced to store original values
     const updateEvent = (updatedEvent: ScheduleEvent) => {
-        setEvents(prevEvents =>
-            prevEvents.map(event =>
-                event.id === updatedEvent.id ? updatedEvent : event
-            )
-        );
-        setHasUnsavedChanges(true);
+        console.log('🔧 Updating event:', updatedEvent);
+        setEvents(prevEvents => {
+            const updated = prevEvents.map(event => {
+                if (event.id === updatedEvent.id) {
+                    // Store original values on first change
+                    const originalDate = event.originalDate || event.date;
+                    const originalTitle = event.originalTitle || event.title;
+                    const originalType = event.originalType || event.type;
+                    const originalDescription = event.originalDescription || event.description;
+
+                    return {
+                        ...updatedEvent,
+                        originalDate: updatedEvent.date !== originalDate ? originalDate : undefined,
+                        originalTitle: updatedEvent.title !== originalTitle ? originalTitle : undefined,
+                        originalType: updatedEvent.type !== originalType ? originalType : undefined,
+                        originalDescription: updatedEvent.description !== originalDescription ? originalDescription : undefined
+                    };
+                }
+                return event;
+            });
+
+            console.log('🔧 Events after update:', updated);
+            return updated;
+        });
+        // hasUnsavedChanges будет обновлен автоматически через useEffect
     };
 
     const deleteEvent = (eventId: number) => {
         setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
         setSelectedEvents(prevSelected => prevSelected.filter(id => id !== eventId));
-        setHasUnsavedChanges(true);
+        // hasUnsavedChanges будет обновлен автоматически через useEffect
     };
 
     return (
