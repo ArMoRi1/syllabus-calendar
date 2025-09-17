@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
-import { ScheduleEvent, ViewMode, InputMethod, ProcessingResult, ModalState } from '../types';
+import { ScheduleEvent, ViewMode, InputMethod, ProcessingResult, ModalState } from '../app/types';
 import { getEventStyle, sampleEvents } from '../app/utils/eventHelpers';
 import { exportSingleEvent, exportSelectedToGoogle } from '../app/utils/exportUtils';
 import NotificationModal from '../app/components/SyllabusCalendar/NotificationModal';
