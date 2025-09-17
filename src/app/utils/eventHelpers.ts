@@ -149,7 +149,7 @@ export const getEventStyle = (type: string) => {
                 color: 'border-l-amber-400 bg-amber-50/80 border-amber-100/50',
                 badge: 'bg-amber-500/90',
                 icon: '✓',
-                textColor: 'text-amber-700'
+                textColor: 'text-gray-900'
             };
         case 'legal':
             return {

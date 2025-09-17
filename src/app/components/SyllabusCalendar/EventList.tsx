@@ -470,7 +470,7 @@ const EventList: React.FC<EventListProps> = ({
                                         {/* Event Content */}
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="text-lg">{style.icon}</span>
+                                                <span className="text-lg text-gray-900">{style.icon}</span>
                                                 <h3 className="text-base font-medium text-gray-900 leading-relaxed">
                                                     {event.title}
                                                     {isModified && (
