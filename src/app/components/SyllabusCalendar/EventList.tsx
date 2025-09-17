@@ -233,17 +233,6 @@ const EventList: React.FC<EventListProps> = ({
                         {isSelectionMode ? 'Cancel Multiple' : 'Select Multiple'}
                     </button>
 
-                    {/* Clear filters */}
-                    {hasActiveFilters && (
-                        <button
-                            onClick={clearAllFilters}
-                            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <X className="h-4 w-4" />
-                            Clear
-                        </button>
-                    )}
-
                     {/* Parse Another Button */}
                     <button
                         onClick={resetForm}

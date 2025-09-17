@@ -140,15 +140,15 @@ const EventFilter: React.FC<EventFilterProps> = ({ events, onFilterChange }) => 
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {hasActiveFilters && (
-                        <button
-                            onClick={clearAllFilters}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <X className="h-3 w-3" />
-                            Clear
-                        </button>
-                    )}
+                    {/*{hasActiveFilters && (*/}
+                    {/*    <button*/}
+                    {/*        onClick={clearAllFilters}*/}
+                    {/*        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"*/}
+                    {/*    >*/}
+                    {/*        <X className="h-3 w-3" />*/}
+                    {/*        Clear*/}
+                    {/*    </button>*/}
+                    {/*)}*/}
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
