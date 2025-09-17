@@ -58,13 +58,11 @@ export default function HomePage() {
 
     // Event management functions
     const saveEventDate = (eventId: number, newDate: string) => {
-        console.log('💾 Saving event date:', eventId, newDate);
         setEvents(prevEvents =>
             prevEvents.map(event => {
                 if (event.id === eventId) {
                     const originalDate = event.originalDate || event.date;
-                    console.log('💾 Event originalDate:', originalDate, 'newDate:', newDate);
-                    return { ...event, date: newDate, originalDate };
+                   return { ...event, date: newDate, originalDate };
                 }
                 return event;
             })
@@ -287,7 +285,6 @@ export default function HomePage() {
 
     // Event update and delete functions - Enhanced to store original values
     const updateEvent = (updatedEvent: ScheduleEvent) => {
-        console.log('🔧 Updating event:', updatedEvent);
         setEvents(prevEvents => {
             const updated = prevEvents.map(event => {
                 if (event.id === updatedEvent.id) {
@@ -307,8 +304,6 @@ export default function HomePage() {
                 }
                 return event;
             });
-
-            console.log('🔧 Events after update:', updated);
             return updated;
         });
         // hasUnsavedChanges будет обновлен автоматически через useEffect

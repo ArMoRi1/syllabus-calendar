@@ -5,6 +5,7 @@ import { ScheduleEvent, EventType } from '../../types';
 import { getEventStyle } from '../../utils/eventHelpers';
 import { EVENT_CATEGORIES } from '../../types';
 import EventEditModal from './EventEditModal';
+import Pagination from './Pagination';
 
 interface EventListProps {
     events: ScheduleEvent[];
@@ -55,6 +56,10 @@ const EventList: React.FC<EventListProps> = ({
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     // Edit modal state
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
@@ -63,6 +68,11 @@ const EventList: React.FC<EventListProps> = ({
     useEffect(() => {
         setFilteredEvents(events);
     }, [events]);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedCategories, searchTerm, itemsPerPage]);
 
     // Category counts
     const categoryCounts = React.useMemo(() => {
@@ -116,6 +126,22 @@ const EventList: React.FC<EventListProps> = ({
         setFilteredEvents(filtered);
     }, [selectedCategories, searchTerm, events]);
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+    // Pagination handlers
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage: number) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1);
+    };
+
     const toggleCategory = (category: EventType) => {
         const newSelected = new Set(selectedCategories);
         if (newSelected.has(category)) {
@@ -152,7 +178,6 @@ const EventList: React.FC<EventListProps> = ({
 
     // Edit modal handlers
     const openEditModal = (event: ScheduleEvent) => {
-        console.log('🔧 EventList: Opening edit modal for event:', event);
         setEditingEvent(event);
         setEditModalOpen(true);
     };
@@ -410,7 +435,7 @@ const EventList: React.FC<EventListProps> = ({
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {filteredEvents.map((event) => {
+                        {paginatedEvents.map((event) => {
                             const style = getEventStyle(event.type);
                             const isSelected = selectedEvents.includes(event.id);
                             const isEditing = editingEventId === event.id;
@@ -512,6 +537,18 @@ const EventList: React.FC<EventListProps> = ({
                     </div>
                 )}
             </div>
+
+            {/* Pagination */}
+            {filteredEvents.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={filteredEvents.length}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
 
             {/* Edit Modal */}
             <EventEditModal
