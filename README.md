@@ -186,25 +186,6 @@ This tool directly addresses pain points for law students and legal professional
 
 The categorization system specifically includes "Legal" events, making it immediately useful for LawBandit's target audience.
 
-## Deployment
-
-### Vercel Deployment (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to production
-npm run deploy
-
-# Or for preview deployment
-npm run deploy:preview
-```
-
-### Environment Variables
-Make sure to set your OpenAI API key in Vercel dashboard:
-- Go to Project Settings → Environment Variables
-- Add `OPENAI_API_KEY` with your API key value
-
 ## Future Enhancements
 
 - **Google Calendar Integration**: Direct sync with Google Calendar
