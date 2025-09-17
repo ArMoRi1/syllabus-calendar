@@ -4,7 +4,6 @@ import { Calendar, Edit3, RotateCcw, Filter, X, ChevronDown, ChevronUp, Search, 
 import { ScheduleEvent, EventType } from '../../types';
 import { getEventStyle } from '../../utils/eventHelpers';
 import { EVENT_CATEGORIES } from '../../types';
-import DateEditor from './DateEditor';
 import EventEditModal from './EventEditModal';
 
 interface EventListProps {
@@ -458,14 +457,6 @@ const EventList: React.FC<EventListProps> = ({
 
                                             {/* Date Display/Editor */}
                                             <div className="mb-2">
-                                                {isEditing ? (
-                                                    <DateEditor
-                                                        currentDate={event.date}
-                                                        onSave={(newDate) => saveEventDate(event.id, newDate)}
-                                                        onCancel={() => setEditingEventId(null)}
-                                                        originalDate={event.originalDate}
-                                                    />
-                                                ) : (
                                                     <div className="flex items-center gap-2">
                                                         <p className="text-sm text-gray-600 font-medium">
                                                             {formatDateDisplay(event.date)}
@@ -487,7 +478,6 @@ const EventList: React.FC<EventListProps> = ({
                                                             </button>
                                                         )}
                                                     </div>
-                                                )}
                                             </div>
 
                                             {/* Description */}
